@@ -22,9 +22,9 @@
   --rule-strong:  #a8997a;  /* deeper rule for insets */
 
   /* Type roles --------------------------------------------------------- */
-  --font-wordmark: "Rakkas", "Aref Ruqaa", serif;
-  --font-display:  "Aref Ruqaa", "Amiri", serif;
-  --font-body:     "Lateef", "Amiri", "Noto Naskh Arabic", serif;
+  --font-wordmark: "Scheherazade New", serif;
+  --font-display:  "Scheherazade New", serif;
+  --font-body:     "Scheherazade New", "Noto Naskh Arabic", serif;
   --font-latin:    "EB Garamond", Georgia, "Times New Roman", serif;
 
   /* Scale (fluid) ------------------------------------------------------ */
