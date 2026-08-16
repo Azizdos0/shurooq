@@ -22,9 +22,9 @@
   --rule-strong:  #a8997a;  /* deeper rule for insets */
 
   /* Type roles --------------------------------------------------------- */
-  --font-wordmark: "Markazi Text", serif;
-  --font-display:  "Markazi Text", serif;
-  --font-body:     "Markazi Text", "Noto Naskh Arabic", serif;
+  --font-wordmark: "Lateef", serif;
+  --font-display:  "Lateef", serif;
+  --font-body:     "Lateef", "Noto Naskh Arabic", serif;
   --font-latin:    "EB Garamond", Georgia, "Times New Roman", serif;
 
   /* Scale (fluid) ------------------------------------------------------ */
