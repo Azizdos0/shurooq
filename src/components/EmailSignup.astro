@@ -1,0 +1,91 @@
+---
+// Email capture. No backend yet — set ENDPOINT to a provider action URL
+// (Buttondown / Mailchimp / Formspree) when ready. Until then the form
+// enhances client-side into an honest "saved locally" acknowledgement.
+const { heading = 'ليصلك العدد الأول', note = 'نُرسل خبرًا واحدًا حين يصدر العدد. لا أكثر.' } = Astro.props;
+---
+<section class="signup reveal" aria-labelledby="signup-h">
+  <div class="container signup-inner">
+    <hr class="rule" />
+    <div class="signup-body">
+      <div class="signup-copy">
+        <p class="eyebrow">اشتراك</p>
+        <h2 id="signup-h" class="signup-h">{heading}</h2>
+        <p class="signup-note">{note}</p>
+      </div>
+      <form class="signup-form" data-endpoint="">
+        <label class="visually-hidden" for="email">بريدك الإلكتروني</label>
+        <input
+          id="email" name="email" type="email" required
+          placeholder="بريدك الإلكتروني" autocomplete="email" dir="ltr" />
+        <button type="submit" class="btn btn-accent">أَبلِغني</button>
+      </form>
+    </div>
+    <p class="signup-status" role="status" aria-live="polite" hidden></p>
+  </div>
+</section>
+
+<style>
+  .signup { margin-top: var(--space-2xl); }
+  .rule { margin-bottom: var(--space-l); }
+  .signup-body {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-l);
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+  .signup-h { font-size: var(--step-2); margin-top: 0.3rem; }
+  .signup-note { color: var(--ink-soft); margin-top: 0.4rem; max-width: 34ch; }
+  .signup-form { display: flex; gap: 0.6rem; flex: 1 1 22rem; max-width: 30rem; }
+  .signup-form input {
+    flex: 1;
+    font-family: var(--font-latin);
+    font-size: var(--step-0);
+    padding: 0.6em 0.9em;
+    background: var(--paper);
+    color: var(--ink);
+    border: 1.5px solid var(--rule-strong);
+  }
+  .signup-form input:focus { outline: none; border-color: var(--oxide); }
+  .signup-status {
+    margin-top: var(--space-s);
+    font-family: var(--font-display);
+    color: var(--oxide);
+  }
+  .visually-hidden {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+  }
+</style>
+
+<script>
+  document.querySelectorAll('.signup-form').forEach((form) => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const wrap = form.closest('.signup');
+      const status = wrap.querySelector('.signup-status');
+      const input = form.querySelector('input[name=email]');
+      const endpoint = form.dataset.endpoint;
+      const show = (msg) => { status.hidden = false; status.textContent = msg; };
+
+      if (endpoint) {
+        try {
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: input.value }),
+          });
+          show(res.ok ? 'وصلنا بريدك. سنبلغك حين يصدر العدد.' : 'تعذّر الإرسال — حاول مرة أخرى.');
+          if (res.ok) form.reset();
+        } catch {
+          show('تعذّر الاتصال — حاول مرة أخرى لاحقًا.');
+        }
+      } else {
+        // No provider connected yet — acknowledge honestly, don't pretend to send.
+        show('شكرًا لك. الاشتراك سيُفعَّل قريبًا — عُد لاحقًا لتأكيده.');
+        form.reset();
+      }
+    });
+  });
+</script>

@@ -1,0 +1,66 @@
+---
+// Slim running-head nav — sits above the masthead like a paper's folio line.
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const links = [
+  { href: '/', label: 'الصدر' },
+  { href: '/archive', label: 'الأرشيف' },
+  { href: '/about', label: 'عن شروق' },
+];
+const isActive = (href) =>
+  href === '/' ? path === '/' : path === href || path.startsWith(href + '/');
+---
+<nav class="folio" aria-label="التنقّل الرئيسي">
+  <div class="container folio-inner">
+    <a class="folio-mark" href="/">شروق</a>
+    <ul class="folio-links">
+      {links.map((l) => (
+        <li>
+          <a href={l.href} class={isActive(l.href) ? 'active' : ''}
+             aria-current={isActive(l.href) ? 'page' : undefined}>{l.label}</a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</nav>
+
+<style>
+  .folio {
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper);
+    position: relative;
+    z-index: 2;
+  }
+  .folio-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-s);
+    padding-block: 0.7rem;
+  }
+  .folio-mark {
+    font-family: var(--font-wordmark);
+    font-size: var(--step-1);
+    color: var(--ink);
+    line-height: 1;
+  }
+  .folio-links {
+    list-style: none;
+    display: flex;
+    gap: clamp(0.9rem, 3vw, 2rem);
+    padding: 0;
+  }
+  .folio-links a {
+    font-family: var(--font-display);
+    font-size: var(--step-0);
+    color: var(--ink-soft);
+    padding-bottom: 2px;
+    border-bottom: 1.5px solid transparent;
+    transition: color 0.2s var(--ease), border-color 0.2s var(--ease);
+  }
+  .folio-links a:hover { color: var(--ink); }
+  .folio-links a.active { color: var(--oxide); border-color: var(--oxide); }
+
+  @media (max-width: 34rem) {
+    .folio-inner { flex-direction: column; gap: 0.4rem; align-items: center; }
+  }
+</style>

@@ -1,0 +1,54 @@
+---
+const year = '٢٠٢٦';
+---
+<footer class="foot">
+  <div class="container">
+    <hr class="rule-double foot-rule" />
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <span class="foot-mark">شروق</span>
+        <p class="foot-line">صحيفةٌ عربية دورية — أن نرى العالمَ بعينٍ جديدة.</p>
+      </div>
+      <nav class="foot-nav" aria-label="روابط أسفل الصفحة">
+        <a href="/">الصدر</a>
+        <a href="/archive">الأرشيف</a>
+        <a href="/about">عن شروق</a>
+      </nav>
+    </div>
+    <p class="foot-fine">
+      تُبنى موادُّ شروق على بحثٍ موثَّق. — تأسست {year}.
+    </p>
+  </div>
+</footer>
+
+<style>
+  .foot { margin-top: var(--space-2xl); padding-bottom: var(--space-l); }
+  .foot-rule { margin-bottom: var(--space-m); }
+  .foot-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: var(--space-m);
+  }
+  .foot-mark {
+    font-family: var(--font-wordmark);
+    font-size: var(--step-2);
+    display: block;
+    line-height: 1;
+  }
+  .foot-line { color: var(--ink-soft); margin-top: 0.5rem; font-size: var(--step--1); }
+  .foot-nav { display: flex; gap: var(--space-m); }
+  .foot-nav a {
+    font-family: var(--font-display);
+    color: var(--ink-soft);
+    border-bottom: 1px solid transparent;
+    transition: color 0.2s var(--ease), border-color 0.2s var(--ease);
+  }
+  .foot-nav a:hover { color: var(--oxide); border-color: var(--oxide); }
+  .foot-fine {
+    margin-top: var(--space-m);
+    color: var(--ink-faint);
+    font-size: var(--step--1);
+  }
+</style>

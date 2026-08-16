@@ -1,0 +1,115 @@
+---
+import Base from '../../layouts/Base.astro';
+import Ornament from '../../components/Ornament.astro';
+import { sections } from '../../data/sections.js';
+
+export function getStaticPaths() {
+  return sections.map((s, i) => ({
+    params: { id: s.id },
+    props: { section: s, index: i },
+  }));
+}
+
+const { section, index } = Astro.props;
+const ordinals = ['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس'];
+const prev = sections[(index - 1 + sections.length) % sections.length];
+const next = sections[(index + 1) % sections.length];
+---
+<Base title={section.title} description={section.blurb}>
+  <article class="sec">
+    <header class="sec-head container">
+      <hr class="rule-double" />
+      <p class="eyebrow">الباب {ordinals[index]}</p>
+      <div class="sec-title-row">
+        <Ornament name={section.ornament} size={72} />
+        <div>
+          <h1 class="sec-title">{section.title}</h1>
+          <p class="sec-en latin">{section.english}</p>
+        </div>
+      </div>
+      <p class="sec-tagline">{section.tagline}</p>
+    </header>
+
+    <div class="sec-body container measure">
+      {section.body.map((p) => <p>{p}</p>)}
+      <p class="sec-status">
+        <span class="sec-status-mark">قريبًا</span>
+        أول ظهورٍ لهذا الباب في العدد الأول.
+      </p>
+    </div>
+
+    <nav class="sec-nav container" aria-label="التنقّل بين الأبواب">
+      <hr class="rule" />
+      <div class="sec-nav-row">
+        <a class="sec-nav-link" href={`/sections/${prev.id}`}>
+          <span class="sec-nav-dir">الباب السابق</span>
+          <span class="sec-nav-name">{prev.title}</span>
+        </a>
+        <a class="sec-nav-home" href="/">كلُّ الأبواب</a>
+        <a class="sec-nav-link end" href={`/sections/${next.id}`}>
+          <span class="sec-nav-dir">الباب التالي</span>
+          <span class="sec-nav-name">{next.title}</span>
+        </a>
+      </div>
+    </nav>
+  </article>
+</Base>
+
+<style>
+  .sec-head { margin-top: var(--space-m); }
+  .rule-double { margin-bottom: var(--space-m); }
+  .sec-title-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-m);
+    margin-top: var(--space-xs);
+  }
+  .sec-title { font-size: var(--step-3); line-height: 1.1; }
+  .sec-en { color: var(--ink-faint); font-style: italic; }
+  .sec-tagline {
+    font-family: var(--font-display);
+    font-size: var(--step-1);
+    color: var(--ink-soft);
+    margin-top: var(--space-s);
+  }
+
+  .sec-body { margin-top: var(--space-l); }
+  .sec-body p { margin-bottom: var(--space-m); font-size: var(--step-1); line-height: 1.9; }
+
+  .sec-status {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-family: var(--font-display) !important;
+    color: var(--ink-soft);
+    font-size: var(--step-0) !important;
+    border-top: 1px solid var(--rule);
+    padding-top: var(--space-m);
+  }
+  .sec-status-mark {
+    color: var(--oxide);
+    border: 1.5px solid var(--oxide);
+    padding: 0.1em 0.7em;
+    transform: rotate(-1.5deg);
+  }
+
+  .sec-nav { margin-top: var(--space-2xl); }
+  .rule { margin-bottom: var(--space-m); }
+  .sec-nav-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-m);
+    flex-wrap: wrap;
+  }
+  .sec-nav-link { display: grid; gap: 0.1rem; }
+  .sec-nav-link.end { text-align: end; }
+  .sec-nav-dir { font-family: var(--font-display); color: var(--oxide); font-size: var(--step--1); }
+  .sec-nav-name { font-family: var(--font-display); font-size: var(--step-1); }
+  .sec-nav-home {
+    font-family: var(--font-display);
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--rule-strong);
+  }
+  .sec-nav-home:hover { color: var(--oxide); border-color: var(--oxide); }
+</style>

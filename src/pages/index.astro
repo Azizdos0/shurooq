@@ -1,0 +1,152 @@
+---
+import Base from '../layouts/Base.astro';
+import Masthead from '../components/Masthead.astro';
+import Ornament from '../components/Ornament.astro';
+import EmailSignup from '../components/EmailSignup.astro';
+import { sections } from '../data/sections.js';
+---
+<Base>
+  <Masthead />
+
+  <!-- Thesis: the front-page statement of what Shurooq is -->
+  <section class="lede container">
+    <p class="eyebrow">صحيفةٌ من خمسة أبواب</p>
+    <p class="lede-thesis">
+      في كلِّ عددٍ، خمسُ نوافذَ نطلُّ منها على العالم:
+      تقدُّمٌ يُقاس، وحضاراتٌ تعود لتتكلَّم، وناسٌ عاديون يستردّون حكايتهم،
+      وتواريخُ لم تقع، وإنترنتٌ يُروى كأنه خبر.
+    </p>
+    <p class="lede-sub measure">
+      شروق صحيفةٌ عربية دورية، تُصنع بأناةٍ لا بسرعة، وتُقدِّم الدقّة والصنعة على العجلة.
+      اسمها من الشروق: أن يستيقظ الماضي على الورقة، وأن نرى حاضرنا من زاويةٍ جديدة.
+    </p>
+  </section>
+
+  <!-- Front-page notice: Issue 1 status -->
+  <section class="notice container reveal" aria-labelledby="notice-h">
+    <div class="notice-box">
+      <span class="notice-kicker">إعلان الصدر</span>
+      <h2 id="notice-h" class="notice-h">العدد الأول قيد الإعداد</h2>
+      <p class="notice-body measure">
+        يُبحث محتوى العدد الأول ويُحرَّر بابًا بابًا، بعناية. حين يكتمل، يصدر هنا —
+        صحيفةً كاملةً تُقرأ وتُحمَّل. إلى أن يحين ذلك، تعرَّف على الأبواب أدناه، واترك بريدك لنبلغك.
+      </p>
+      <a class="btn" href="/archive">إلى الأرشيف</a>
+    </div>
+  </section>
+
+  <!-- The five sections index -->
+  <section class="index container" aria-labelledby="index-h">
+    <div class="index-head">
+      <hr class="rule-strong" />
+      <h2 id="index-h" class="index-title">الأبواب الخمسة</h2>
+      <p class="index-note">كلُّ بابٍ نوعٌ قائمٌ بذاته لرؤية العالم. الأسماء العربية ما تزال قيد الاختيار.</p>
+    </div>
+
+    <ol class="sections">
+      {sections.map((s, i) => (
+        <li class="section-row reveal">
+          <a class="section-link" href={`/sections/${s.id}`}>
+            <span class="section-orn"><Ornament name={s.ornament} size={52} /></span>
+            <span class="section-text">
+              <span class="section-num">{['الأول','الثاني','الثالث','الرابع','الخامس'][i]}</span>
+              <span class="section-title">{s.title}</span>
+              <span class="section-en latin">{s.english}</span>
+              <span class="section-blurb">{s.blurb}</span>
+            </span>
+            <span class="section-go" aria-hidden="true">↖</span>
+          </a>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  <EmailSignup />
+</Base>
+
+<style>
+  .lede { margin-top: var(--space-xl); }
+  .lede-thesis {
+    font-family: var(--font-display);
+    font-size: var(--step-3);
+    line-height: 1.5;
+    color: var(--ink);
+    margin-top: var(--space-s);
+    max-width: 26ch;
+  }
+  .lede-sub { color: var(--ink-soft); margin-top: var(--space-m); }
+
+  /* Notice ------------------------------------------------------------- */
+  .notice { margin-top: var(--space-2xl); }
+  .notice-box {
+    border: 1.5px solid var(--ink);
+    padding: clamp(1.6rem, 4vw, 2.8rem);
+    background: var(--paper-shade);
+    position: relative;
+  }
+  .notice-box::before {
+    content: "";
+    position: absolute;
+    inset: 6px;
+    border: 1px solid var(--rule-strong);
+    pointer-events: none;
+  }
+  .notice-kicker {
+    font-family: var(--font-display);
+    color: var(--oxide);
+    font-size: var(--step--1);
+  }
+  .notice-h { font-size: var(--step-2); margin: 0.3rem 0 0.6rem; }
+  .notice-body { color: var(--ink-soft); margin-bottom: var(--space-m); }
+
+  /* Index -------------------------------------------------------------- */
+  .index { margin-top: var(--space-2xl); }
+  .index-head { text-align: center; }
+  .rule-strong { margin-bottom: var(--space-m); }
+  .index-title { font-size: var(--step-2); }
+  .index-note { color: var(--ink-faint); font-size: var(--step--1); margin-top: 0.4rem; }
+
+  .sections { list-style: none; padding: 0; margin-top: var(--space-l); }
+  .section-row { border-top: 1px solid var(--rule); }
+  .section-row:last-child { border-bottom: 1px solid var(--rule); }
+
+  .section-link {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: clamp(1rem, 3vw, 2rem);
+    padding: clamp(1.3rem, 3vw, 2rem) 0.4rem;
+    transition: background-color 0.25s var(--ease);
+  }
+  .section-link:hover { background: var(--paper-shade); }
+
+  .section-orn { color: var(--ink); transition: transform 0.3s var(--ease); }
+  .section-link:hover .section-orn { transform: translateY(-2px); }
+
+  .section-text { display: grid; gap: 0.15rem; }
+  .section-num {
+    font-family: var(--font-display);
+    color: var(--oxide);
+    font-size: var(--step--1);
+  }
+  .section-title { font-family: var(--font-display); font-size: var(--step-1); font-weight: 700; }
+  .section-en {
+    font-size: var(--step--1);
+    color: var(--ink-faint);
+    font-style: italic;
+    letter-spacing: 0.02em;
+  }
+  .section-blurb { color: var(--ink-soft); margin-top: 0.35rem; line-height: 1.85; }
+
+  .section-go {
+    font-size: var(--step-2);
+    color: var(--rule-strong);
+    transition: color 0.25s var(--ease), transform 0.25s var(--ease);
+  }
+  .section-link:hover .section-go { color: var(--oxide); transform: translate(-3px, -3px); }
+
+  @media (max-width: 34rem) {
+    .section-link { grid-template-columns: auto 1fr; }
+    .section-go { display: none; }
+  }
+</style>

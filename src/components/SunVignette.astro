@@ -1,0 +1,74 @@
+---
+// The signature: an engraved rising sun sitting ON the nameplate's horizon
+// rule — half risen, half below. Literalizes شروق (sunrise). Rises on load.
+const rays = [];
+// upper-hemisphere rays fanning from the disc, alternating length
+const count = 13;
+for (let i = 0; i < count; i++) {
+  const a = Math.PI + (i / (count - 1)) * Math.PI; // 180deg -> 360deg (upper arc)
+  const long = i % 2 === 0;
+  const r1 = 40;
+  const r2 = long ? 70 : 56;
+  rays.push({
+    x1: 500 + Math.cos(a) * r1, y1: 100 + Math.sin(a) * r1,
+    x2: 500 + Math.cos(a) * r2, y2: 100 + Math.sin(a) * r2,
+  });
+}
+---
+<div class="sun-vignette" role="presentation">
+  <svg viewBox="0 0 1000 150" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+    <!-- horizon rule, broken where the sun sits -->
+    <g class="horizon" stroke="var(--ink)" stroke-width="2" shape-rendering="crispEdges">
+      <line x1="0" y1="100" x2="430" y2="100" />
+      <line x1="570" y1="100" x2="1000" y2="100" />
+    </g>
+    <g class="sun">
+      <g class="rays" stroke="var(--ink)" stroke-width="1.2" stroke-linecap="round">
+        {rays.map((r) => <line x1={r.x1} y1={r.y1} x2={r.x2} y2={r.y2} />)}
+      </g>
+      <!-- disc: the one whisper of light -->
+      <circle cx="500" cy="100" r="34" fill="var(--ochre)" fill-opacity="0.22"
+              stroke="var(--ink)" stroke-width="1.6" />
+      <path d="M472 100 A28 28 0 0 1 528 100" fill="none" stroke="var(--ink)" stroke-width="0.9" opacity="0.5" />
+      <path d="M482 100 A18 18 0 0 1 518 100" fill="none" stroke="var(--ink)" stroke-width="0.9" opacity="0.4" />
+    </g>
+  </svg>
+</div>
+
+<style>
+  .sun-vignette {
+    width: 100%;
+    max-width: 46rem;
+    margin-inline: auto;
+    line-height: 0;
+  }
+  .sun-vignette svg { width: 100%; height: auto; overflow: visible; }
+
+  .sun { transform-box: fill-box; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .sun {
+      animation: sun-rise 1.3s var(--ease) both;
+      transform-origin: center;
+    }
+    .rays line {
+      opacity: 0;
+      animation: ray-in 0.9s var(--ease) both;
+      animation-delay: 0.6s;
+    }
+    .horizon line {
+      transform: scaleX(0);
+      transform-origin: var(--from);
+      animation: rule-draw 1s var(--ease) both;
+    }
+    .horizon line:first-child { --from: left; }
+    .horizon line:last-child  { --from: right; }
+  }
+
+  @keyframes sun-rise {
+    from { transform: translateY(30px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+  @keyframes ray-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes rule-draw { to { transform: scaleX(1); } }
+</style>

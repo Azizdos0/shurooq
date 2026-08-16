@@ -1,0 +1,117 @@
+---
+import Base from '../layouts/Base.astro';
+
+const marks = [
+  {
+    tag: 'موثَّق',
+    en: 'Verified',
+    desc: 'مسنودٌ إلى مصدرٍ حقيقيٍّ يمكن الرجوع إليه: بياناتٌ أو وثيقةٌ أو دراسةٌ معروفة.',
+    cls: 'verified',
+  },
+  {
+    tag: 'روايةٌ متواترة',
+    en: 'Reported tradition',
+    desc: 'تتكرَّر في المصادر لكنها ليست مؤكَّدةً تمامًا؛ نرويها بوصفها روايةً لا حقيقةً قاطعة.',
+    cls: 'reported',
+  },
+  {
+    tag: 'إعادة تخيُّل',
+    en: 'Reconstructed',
+    desc: 'تفصيلٌ أسلوبيٌّ يخدم الصورة، غير مُتحقَّقٍ منه استقلالًا؛ نُعلِنه كي لا يُقرأ حقيقة.',
+    cls: 'reconstructed',
+  },
+];
+---
+<Base title="عن شروق" description="عن شروق ومنهجها في التوثيق.">
+  <section class="head container">
+    <hr class="rule-double" />
+    <p class="eyebrow">عن شروق</p>
+    <h1 class="head-title">صحيفةٌ تُصنع بأناة</h1>
+  </section>
+
+  <section class="prose container measure">
+    <p>
+      شروق (شُروق: مطلع الشمس) صحيفةٌ عربية دورية، تنظر في كلِّ عددٍ إلى العالم من خمس زوايا.
+      ليست منبرًا إخباريًّا يلاحق العاجل، بل صحيفةٌ أشبه بمختاراتٍ أدبية-معرفية: خمسة أبواب،
+      لكلٍّ منها نوعُه في النظر إلى الأشياء.
+    </p>
+    <p>
+      يصنعها فردٌ واحد، بحثًا وتحريرًا وتصميمًا. لا موعدَ يضغط، ولا سباقَ سرعة —
+      تتقدَّم الدقّةُ والصنعةُ على العجلة دائمًا. اسمها من الشروق لأن الفكرة كلَّها أن نرى
+      بعينٍ جديدة: الماضي يستيقظ على الورقة، وزاويةٌ طازجةٌ على الحاضر، والتقدُّم بوصفه
+      عالمًا يزداد ضوءًا على مهل.
+    </p>
+
+    <h2 class="prose-h">كيف نتحقَّق</h2>
+    <p>
+      قبل النشر، تمرُّ كلُّ مادةٍ على وسمٍ للتحقُّق: نُصنِّف ما فيها من مقولاتٍ إلى ثلاث درجات،
+      ويرافق كلَّ قطعةٍ سِجلُّ مصادر. هذا التمييز جزءٌ من هويّة شروق، لا إجراءٌ خفيّ.
+    </p>
+  </section>
+
+  <section class="marks container" aria-label="درجات التحقُّق">
+    {marks.map((m) => (
+      <div class={`mark reveal ${m.cls}`}>
+        <span class="mark-stamp">{m.tag}</span>
+        <span class="mark-en latin">{m.en}</span>
+        <p class="mark-desc">{m.desc}</p>
+      </div>
+    ))}
+  </section>
+
+  <section class="prose container measure">
+    <h2 class="prose-h">سِجِلُّ المصادر</h2>
+    <p>
+      يرافق كلَّ عددٍ سِجلٌّ بما استُند إليه: البيانات، والوثائق، والدراسات. الغاية أن يقرأ
+      القارئُ بثقة، وأن يتمكَّن — إن شاء — من التتبُّع بنفسه.
+    </p>
+  </section>
+</Base>
+
+<style>
+  .head { margin-top: var(--space-m); }
+  .rule-double { margin-bottom: var(--space-m); }
+  .head-title { font-size: var(--step-3); margin-top: 0.4rem; }
+
+  .prose { margin-top: var(--space-l); }
+  .prose p { margin-bottom: var(--space-m); color: var(--ink); }
+  .prose-h {
+    font-size: var(--step-2);
+    margin: var(--space-l) 0 var(--space-s);
+    padding-top: var(--space-s);
+    border-top: 2px solid var(--ink);
+  }
+
+  .marks {
+    margin-top: var(--space-l);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: var(--space-m);
+  }
+  .mark {
+    border: 1px solid var(--rule);
+    padding: var(--space-m);
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  /* the three editorial stamps — bordered marks, like a proofreader's */
+  .mark-stamp {
+    align-self: flex-start;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--step-0);
+    color: var(--oxide);
+    border: 1.5px solid var(--oxide);
+    padding: 0.15em 0.7em;
+    transform: rotate(-1.5deg);
+  }
+  .reported .mark-stamp { color: var(--ink-soft); border-color: var(--ink-soft); }
+  .reconstructed .mark-stamp {
+    color: var(--ink-faint);
+    border-color: var(--ink-faint);
+    border-style: dashed;
+  }
+  .mark-en { color: var(--ink-faint); font-style: italic; font-size: var(--step--1); }
+  .mark-desc { color: var(--ink-soft); font-size: var(--step--1); line-height: 1.85; }
+</style>

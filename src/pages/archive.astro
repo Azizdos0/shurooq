@@ -1,0 +1,112 @@
+---
+import Base from '../layouts/Base.astro';
+
+// Issues live here. When Issue 1 is ready, add an entry with a cover,
+// date, and PDF path; the "coming soon" card becomes a real one.
+const issues = [
+  {
+    number: '٠١',
+    title: 'العدد الأول',
+    date: 'قيد الإعداد',
+    status: 'coming', // 'coming' | 'ready'
+    summary: 'أول عددٍ كامل، يضمُّ الأبواب الخمسة. يُحرَّر بابًا بابًا بعناية.',
+    pdf: null,
+  },
+];
+const ghosts = 3; // faint future slots, to read as an ongoing publication
+---
+<Base title="الأرشيف" description="أرشيف أعداد شروق — صحيفةٌ عربية دورية.">
+  <section class="head container">
+    <hr class="rule-double" />
+    <p class="eyebrow">الأرشيف</p>
+    <h1 class="head-title">أعداد شروق</h1>
+    <p class="head-sub measure">
+      كلُّ عددٍ صحيفةٌ كاملةٌ بأبوابها الخمسة، تُقرأ هنا وتُحمَّل. تصدر الأعداد على فترات،
+      دون ضغط موعد — حين يكتمل العدد يُنشر.
+    </p>
+  </section>
+
+  <section class="grid container" aria-label="قائمة الأعداد">
+    {issues.map((it) => (
+      <article class={`issue reveal ${it.status}`}>
+        <div class="issue-cover">
+          <span class="cover-mark">شروق</span>
+          <hr class="cover-rule" />
+          <span class="cover-num">العدد {it.number}</span>
+        </div>
+        <div class="issue-body">
+          <h2 class="issue-title">{it.title}</h2>
+          <p class="issue-date">{it.date}</p>
+          <p class="issue-summary">{it.summary}</p>
+          <div class="issue-actions">
+            {it.status === 'ready' ? (
+              <>
+                <a class="btn btn-accent" href={it.pdf}>اقرأ العدد</a>
+                <a class="btn" href={it.pdf} download>تحميل PDF</a>
+              </>
+            ) : (
+              <button class="btn" disabled>قريبًا</button>
+            )}
+          </div>
+        </div>
+      </article>
+    ))}
+
+    {Array.from({ length: ghosts }).map((_, i) => (
+      <article class="issue ghost" aria-hidden="true">
+        <div class="issue-cover">
+          <span class="cover-num">العدد {['٠٢','٠٣','٠٤'][i]}</span>
+        </div>
+        <div class="issue-body">
+          <p class="ghost-line">في الطريق</p>
+        </div>
+      </article>
+    ))}
+  </section>
+</Base>
+
+<style>
+  .head { margin-top: var(--space-m); }
+  .rule-double { margin-bottom: var(--space-m); }
+  .head-title { font-size: var(--step-3); margin-top: 0.4rem; }
+  .head-sub { color: var(--ink-soft); margin-top: var(--space-s); }
+
+  .grid {
+    margin-top: var(--space-xl);
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: var(--space-l);
+  }
+
+  .issue {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--rule);
+  }
+  .issue-cover {
+    background: var(--paper-shade);
+    border-bottom: 1px solid var(--rule);
+    aspect-ratio: 3 / 4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: var(--space-m);
+  }
+  .cover-mark { font-family: var(--font-wordmark); font-size: var(--step-3); line-height: 1; }
+  .cover-rule { width: 60%; border: 0; border-top: 1.5px solid var(--ink); }
+  .cover-num { font-family: var(--font-display); color: var(--ink-soft); }
+
+  .issue-body { padding: var(--space-m); display: flex; flex-direction: column; gap: 0.4rem; flex: 1; }
+  .issue-title { font-size: var(--step-1); }
+  .issue-date { font-family: var(--font-display); color: var(--oxide); font-size: var(--step--1); }
+  .issue-summary { color: var(--ink-soft); font-size: var(--step--1); line-height: 1.8; }
+  .issue-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: auto; padding-top: var(--space-s); }
+
+  /* Ghost future issues — imply an ongoing publication */
+  .issue.ghost { border-style: dashed; opacity: 0.5; }
+  .issue.ghost .issue-cover { background: transparent; aspect-ratio: 3 / 4; }
+  .issue.ghost .cover-num { color: var(--ink-faint); }
+  .ghost-line { font-family: var(--font-display); color: var(--ink-faint); text-align: center; }
+</style>
