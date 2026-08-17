@@ -1,16 +1,15 @@
 ---
 import Base from '../layouts/Base.astro';
 
-// Issues live here. When Issue 1 is ready, add an entry with a cover,
-// date, and PDF path; the "coming soon" card becomes a real one.
+// Issues live here. A 'ready' issue links to its web page at /issue/<n>.
 const issues = [
   {
     number: '٠١',
     title: 'العدد الأول',
-    date: 'قيد الإعداد',
-    status: 'coming', // 'coming' | 'ready'
-    summary: 'أول عددٍ كامل، يضمُّ الأبواب الخمسة. يُحرَّر بابًا بابًا بعناية.',
-    pdf: null,
+    date: 'آب ٢٠٢٦',
+    status: 'ready', // 'coming' | 'ready'
+    summary: 'العددُ الأوّل بأبوابه الخمسة: من بغدادَ المأمون ومحيطِ الأرض، إلى مؤشّراتِ التقدُّم، وعالَمٍ بلا حركةِ الترجمة.',
+    href: '/issue/1',
   },
 ];
 const ghosts = 3; // faint future slots, to read as an ongoing publication
@@ -40,10 +39,7 @@ const ghosts = 3; // faint future slots, to read as an ongoing publication
           <p class="issue-summary">{it.summary}</p>
           <div class="issue-actions">
             {it.status === 'ready' ? (
-              <>
-                <a class="btn btn-accent" href={it.pdf}>اقرأ العدد</a>
-                <a class="btn" href={it.pdf} download>تحميل PDF</a>
-              </>
+              <a class="btn btn-accent" href={it.href}>اقرأ العدد</a>
             ) : (
               <button class="btn" disabled>قريبًا</button>
             )}

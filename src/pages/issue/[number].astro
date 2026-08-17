@@ -3,18 +3,19 @@ export const prerender = false; // reads live "ready" pieces from the DB
 
 import Base from '../../layouts/Base.astro';
 import Ornament from '../../components/Ornament.astro';
+import SunVignette from '../../components/SunVignette.astro';
 import { sections } from '../../data/sections.js';
 import { getSupabase, isConfigured } from '../../lib/supabase.js';
 import { renderPieceBody } from '../../lib/templates.js';
 
 const number = Number(Astro.params.number);
 const ordinals = ['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس'];
+const arNum = { 1: '٠١', 2: '٠٢', 3: '٠٣', 4: '٠٤', 5: '٠٥' };
 const orderOf = Object.fromEntries(sections.map((s, i) => [s.id, i]));
 const meta = Object.fromEntries(sections.map((s, i) => [s.id, { ...s, ordinal: ordinals[i] }]));
 
 let issue = null;
 let readyPieces = [];
-let dbError = null;
 
 if (isConfigured() && Number.isFinite(number)) {
   try {
@@ -34,61 +35,136 @@ if (isConfigured() && Number.isFinite(number)) {
       readyPieces = (pcs || []).sort((a, b) => orderOf[a.section] - orderOf[b.section]);
     }
   } catch (e) {
-    dbError = e.message;
+    /* fall through to empty state */
   }
 }
 
 const title = issue?.title || `العدد ${number}`;
+const issueNo = arNum[number] || number;
 ---
 <Base title={title} description={`${title} — شروق`}>
-  <section class="issue-head container">
-    <hr class="rule-double" />
-    <p class="eyebrow">عددٌ من شروق</p>
-    <h1 class="issue-title">{title}</h1>
-  </section>
+  <header class="issue-plate">
+    <div class="container">
+      <hr class="rule-double" />
+      <div class="plate-row">
+        <span class="plate-side">العدد {issueNo}</span>
+        <span class="plate-word">شروق</span>
+        <span class="plate-side plate-end">خمسةُ أبواب</span>
+      </div>
+      <p class="plate-tagline">أن نرى العالمَ بعينٍ جديدة</p>
+      <div class="plate-horizon"><SunVignette /></div>
+      <h1 class="plate-title">{title}</h1>
+    </div>
+  </header>
 
   {readyPieces.length === 0 ? (
     <section class="container empty">
       <hr class="rule" />
-      <p class="empty-line">
-        لم يُنشر من هذا العدد بابٌ بعد. تُنشر الأبواب هنا فور اكتمالها.
-      </p>
+      <p class="empty-line">لم يُنشر من هذا العدد بابٌ بعد. تُنشر الأبواب هنا فور اكتمالها.</p>
       <a class="btn" href="/archive">إلى الأرشيف</a>
     </section>
   ) : (
-    <div class="pieces container">
-      {readyPieces.map((p) => {
-        const m = meta[p.section];
-        return (
-          <article class="piece">
-            <hr class="rule" />
-            <p class="piece-eyebrow">الباب {m.ordinal}</p>
-            <div class="piece-title-row">
-              <Ornament name={m.ornament} size={60} />
-              <h2 class="piece-title">{m.title}</h2>
-            </div>
-            <div class="piece-body" set:html={renderPieceBody(p.section, p.content)} />
-          </article>
-        );
-      })}
-    </div>
+    <>
+      <nav class="toc container" aria-label="فهرس العدد">
+        <p class="eyebrow">الفهرس</p>
+        <ol class="toc-list">
+          {readyPieces.map((p) => {
+            const m = meta[p.section];
+            return (
+              <li class="toc-item">
+                <a href={`#bab-${p.section}`}>
+                  <span class="toc-orn"><Ornament name={m.ornament} size={30} /></span>
+                  <span class="toc-text">
+                    <span class="toc-ord">الباب {m.ordinal}</span>
+                    <span class="toc-name">{m.title}</span>
+                    {p.title?.trim() && <span class="toc-sub">{p.title}</span>}
+                  </span>
+                </a>
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
+
+      <div class="pieces container">
+        {readyPieces.map((p) => {
+          const m = meta[p.section];
+          return (
+            <article class="piece" id={`bab-${p.section}`}>
+              <hr class="rule-strong" />
+              <p class="piece-eyebrow">الباب {m.ordinal}</p>
+              <div class="piece-title-row">
+                <Ornament name={m.ornament} size={64} />
+                <div>
+                  <h2 class="piece-title">{m.title}</h2>
+                  <p class="piece-tagline">{m.tagline}</p>
+                </div>
+              </div>
+              <div class="piece-body" set:html={renderPieceBody(p.section, p.content)} />
+            </article>
+          );
+        })}
+      </div>
+
+      <div class="issue-foot container">
+        <hr class="rule" />
+        <p class="issue-foot-line">تمّ العدد. — تُبنى موادُّ شروق على بحثٍ موثَّق.</p>
+        <a class="btn" href="/archive">إلى الأرشيف</a>
+      </div>
+    </>
   )}
 </Base>
 
 <style>
-  .issue-head { margin-top: var(--space-m); }
+  /* Issue nameplate — opening the issue should feel like a front page */
+  .issue-plate { padding-top: var(--space-m); text-align: center; }
   .rule-double { margin-bottom: var(--space-m); }
-  .issue-title { font-size: var(--step-3); margin-top: 0.4rem; }
+  .plate-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: var(--space-m);
+  }
+  .plate-word { font-family: var(--font-wordmark); font-size: var(--step-4); line-height: 0.9; }
+  .plate-side { font-family: var(--font-display); color: var(--ink-soft); font-size: var(--step-0); }
+  .plate-end { text-align: end; }
+  .plate-tagline { font-family: var(--font-display); color: var(--ink-soft); font-size: var(--step-1); margin-top: 0.5rem; }
+  .plate-horizon { margin-top: var(--space-s); }
+  .plate-title { font-size: var(--step-2); margin-top: var(--space-s); }
+
+  /* Contents */
+  .toc { margin-top: var(--space-2xl); }
+  .toc-list { list-style: none; padding: 0; margin-top: var(--space-m); border-top: 1px solid var(--rule); }
+  .toc-item { border-bottom: 1px solid var(--rule); }
+  .toc-item a {
+    display: flex;
+    align-items: center;
+    gap: var(--space-m);
+    padding: 0.9rem 0.3rem;
+    transition: background-color 0.2s var(--ease);
+  }
+  .toc-item a:hover { background: var(--paper-shade); }
+  .toc-orn { color: var(--ink); flex: none; }
+  .toc-text { display: grid; gap: 0.1rem; }
+  .toc-ord { font-family: var(--font-display); color: var(--oxide); font-size: var(--step--1); }
+  .toc-name { font-family: var(--font-display); font-size: var(--step-1); }
+  .toc-sub { color: var(--ink-soft); font-size: var(--step--1); }
+
+  /* Pieces */
+  .pieces { margin-top: var(--space-2xl); display: flex; flex-direction: column; gap: var(--space-2xl); }
+  .piece { scroll-margin-top: 1.5rem; }
+  .piece .rule-strong { margin-bottom: var(--space-m); }
+  .piece-eyebrow { font-family: var(--font-display); color: var(--oxide); font-size: var(--step--1); }
+  .piece-title-row { display: flex; align-items: center; gap: var(--space-m); margin-top: var(--space-2xs); }
+  .piece-title { font-size: var(--step-2); line-height: 1.1; }
+  .piece-tagline { font-family: var(--font-display); color: var(--ink-soft); font-size: var(--step-0); margin-top: 0.2rem; }
+  .piece-body { margin-top: var(--space-l); max-width: var(--measure); }
 
   .empty { margin-top: var(--space-xl); }
   .empty .rule { margin-bottom: var(--space-m); }
   .empty-line { color: var(--ink-soft); margin-bottom: var(--space-m); max-width: 48ch; }
 
-  .pieces { margin-top: var(--space-xl); display: flex; flex-direction: column; gap: var(--space-2xl); }
-  .piece .rule { margin-bottom: var(--space-m); }
-  .piece-eyebrow { font-family: var(--font-display); color: var(--oxide); font-size: var(--step--1); }
-  .piece-title-row { display: flex; align-items: center; gap: var(--space-m); margin-top: var(--space-2xs); }
-  .piece-title { font-size: var(--step-2); }
-  .piece-body { margin-top: var(--space-l); max-width: var(--measure); }
-  .piece-body p { margin-bottom: var(--space-m); font-size: var(--step-1); line-height: 1.95; }
+  .issue-foot { margin-top: var(--space-2xl); text-align: center; }
+  .issue-foot .rule { margin-bottom: var(--space-m); }
+  .issue-foot-line { font-family: var(--font-display); color: var(--ink-soft); margin-bottom: var(--space-m); }
 </style>
