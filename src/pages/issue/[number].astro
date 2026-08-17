@@ -21,150 +21,190 @@ if (isConfigured() && Number.isFinite(number)) {
   try {
     const sb = getSupabase();
     const { data: iss } = await sb
-      .from('issues')
-      .select('id, number, title')
-      .eq('number', number)
-      .maybeSingle();
+      .from('issues').select('id, number, title').eq('number', number).maybeSingle();
     issue = iss;
     if (issue) {
       const { data: pcs } = await sb
-        .from('pieces')
-        .select('section, title, content')
-        .eq('issue_id', issue.id)
-        .eq('status', 'ready');
+        .from('pieces').select('section, title, content')
+        .eq('issue_id', issue.id).eq('status', 'ready');
       readyPieces = (pcs || []).sort((a, b) => orderOf[a.section] - orderOf[b.section]);
     }
-  } catch (e) {
-    /* fall through to empty state */
-  }
+  } catch (e) { /* fall through to empty state */ }
 }
 
 const title = issue?.title || `العدد ${number}`;
 const issueNo = arNum[number] || number;
 ---
 <Base title={title} description={`${title} — شروق`}>
-  <header class="issue-plate">
-    <div class="container">
-      <hr class="rule-double" />
-      <div class="plate-row">
-        <span class="plate-side">العدد {issueNo}</span>
-        <span class="plate-word">شروق</span>
-        <span class="plate-side plate-end">خمسةُ أبواب</span>
+  <div class="paper container">
+    <!-- Nameplate ------------------------------------------------------- -->
+    <header class="masthead">
+      <hr class="rule-hair" />
+      <div class="mp-word-row">
+        <span class="mp-side">السنةُ الأولى</span>
+        <h1 class="mp-word">شروق</h1>
+        <span class="mp-side mp-end">العددُ {issueNo}</span>
       </div>
-      <p class="plate-tagline">أن نرى العالمَ بعينٍ جديدة</p>
-      <div class="plate-horizon"><SunVignette /></div>
-      <h1 class="plate-title">{title}</h1>
-    </div>
-  </header>
+      <p class="mp-tag">أن نرى العالمَ بعينٍ جديدة</p>
+      <div class="mp-strip">
+        <span>{title}</span>
+        <span class="mp-dot">◆</span>
+        <span>آب ٢٠٢٦</span>
+        <span class="mp-dot">◆</span>
+        <span>خمسةُ أبواب</span>
+        <span class="mp-dot">◆</span>
+        <span>مجّانًا</span>
+      </div>
+      <div class="mp-horizon"><SunVignette /></div>
+    </header>
 
-  {readyPieces.length === 0 ? (
-    <section class="container empty">
-      <hr class="rule" />
-      <p class="empty-line">لم يُنشر من هذا العدد بابٌ بعد. تُنشر الأبواب هنا فور اكتمالها.</p>
-      <a class="btn" href="/archive">إلى الأرشيف</a>
-    </section>
-  ) : (
-    <>
-      <nav class="toc container" aria-label="فهرس العدد">
-        <p class="eyebrow">الفهرس</p>
-        <ol class="toc-list">
-          {readyPieces.map((p) => {
-            const m = meta[p.section];
-            return (
-              <li class="toc-item">
-                <a href={`#bab-${p.section}`}>
-                  <span class="toc-orn"><Ornament name={m.ornament} size={30} /></span>
-                  <span class="toc-text">
-                    <span class="toc-ord">الباب {m.ordinal}</span>
-                    <span class="toc-name">{m.title}</span>
-                    {p.title?.trim() && <span class="toc-sub">{p.title}</span>}
-                  </span>
-                </a>
-              </li>
-            );
-          })}
-        </ol>
-      </nav>
+    {readyPieces.length === 0 ? (
+      <section class="empty">
+        <hr class="rule" />
+        <p class="empty-line">لم يُنشر من هذا العدد بابٌ بعد. تُنشر الأبواب هنا فور اكتمالها.</p>
+        <a class="btn" href="/archive">إلى الأرشيف</a>
+      </section>
+    ) : (
+      <>
+        <!-- Front-page index -------------------------------------------- -->
+        <nav class="index" aria-label="في هذا العدد">
+          <span class="index-title">في هذا العدد</span>
+          <ul class="index-list">
+            {readyPieces.map((p) => {
+              const m = meta[p.section];
+              return (
+                <li>
+                  <a href={`#bab-${p.section}`}>
+                    <span class="index-name">{m.title}</span>
+                    {p.title?.trim() && <span class="index-sub">{p.title}</span>}
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
 
-      <div class="pieces container">
+        <!-- Sections ----------------------------------------------------- -->
         {readyPieces.map((p) => {
           const m = meta[p.section];
           return (
-            <article class="piece" id={`bab-${p.section}`}>
-              <hr class="rule-strong" />
-              <p class="piece-eyebrow">الباب {m.ordinal}</p>
-              <div class="piece-title-row">
-                <Ornament name={m.ornament} size={64} />
-                <div>
-                  <h2 class="piece-title">{m.title}</h2>
-                  <p class="piece-tagline">{m.tagline}</p>
-                </div>
+            <article class="paper-section" id={`bab-${p.section}`}>
+              <div class="section-banner">
+                <span class="sb-inner">
+                  <span class="sb-orn"><Ornament name={m.ornament} size={38} /></span>
+                  <span class="sb-text">
+                    <span class="sb-ord">الباب {m.ordinal}</span>
+                    <span class="sb-name">{m.title}</span>
+                  </span>
+                </span>
               </div>
-              <div class="piece-body" set:html={renderPieceBody(p.section, p.content)} />
+              <p class="section-tagline">{m.tagline}</p>
+              <div class="section-flow" set:html={renderPieceBody(p.section, p.content)} />
             </article>
           );
         })}
-      </div>
 
-      <div class="issue-foot container">
-        <hr class="rule" />
-        <p class="issue-foot-line">تمّ العدد. — تُبنى موادُّ شروق على بحثٍ موثَّق.</p>
-        <a class="btn" href="/archive">إلى الأرشيف</a>
-      </div>
-    </>
-  )}
+        <footer class="colophon">
+          <hr class="rule-double" />
+          <p class="colophon-line">تمّ العدد — تُبنى موادُّ شروق على بحثٍ موثَّق.</p>
+          <a class="btn" href="/archive">إلى الأرشيف</a>
+        </footer>
+      </>
+    )}
+  </div>
 </Base>
 
 <style>
-  /* Issue nameplate — opening the issue should feel like a front page */
-  .issue-plate { padding-top: var(--space-m); text-align: center; }
-  .rule-double { margin-bottom: var(--space-m); }
-  .plate-row {
+  .paper { padding-top: var(--space-m); }
+
+  /* Nameplate */
+  .masthead { text-align: center; }
+  .rule-hair { border: 0; border-top: 1px solid var(--ink); }
+  .mp-word-row {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
     gap: var(--space-m);
+    margin-top: var(--space-s);
   }
-  .plate-word { font-family: var(--font-wordmark); font-size: var(--step-4); line-height: 0.9; }
-  .plate-side { font-family: var(--font-display); color: var(--ink-soft); font-size: var(--step-0); }
-  .plate-end { text-align: end; }
-  .plate-tagline { font-family: var(--font-display); color: var(--ink-soft); font-size: var(--step-1); margin-top: 0.5rem; }
-  .plate-horizon { margin-top: var(--space-s); }
-  .plate-title { font-size: var(--step-2); margin-top: var(--space-s); }
-
-  /* Contents */
-  .toc { margin-top: var(--space-2xl); }
-  .toc-list { list-style: none; padding: 0; margin-top: var(--space-m); border-top: 1px solid var(--rule); }
-  .toc-item { border-bottom: 1px solid var(--rule); }
-  .toc-item a {
+  .mp-side { font-family: var(--font-display); color: var(--ink-soft); font-size: var(--step-0); }
+  .mp-end { text-align: end; }
+  .mp-word { font-family: var(--font-wordmark); font-size: var(--step-4); line-height: 0.9; }
+  .mp-tag { font-family: var(--font-display); color: var(--ink-soft); font-size: var(--step-1); margin-top: 0.4rem; }
+  .mp-strip {
     display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     align-items: center;
-    gap: var(--space-m);
-    padding: 0.9rem 0.3rem;
-    transition: background-color 0.2s var(--ease);
+    gap: 0.6rem;
+    margin-top: var(--space-s);
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+    font-family: var(--font-display);
+    font-size: var(--step--1);
+    color: var(--ink-soft);
   }
-  .toc-item a:hover { background: var(--paper-shade); }
-  .toc-orn { color: var(--ink); flex: none; }
-  .toc-text { display: grid; gap: 0.1rem; }
-  .toc-ord { font-family: var(--font-display); color: var(--oxide); font-size: var(--step--1); }
-  .toc-name { font-family: var(--font-display); font-size: var(--step-1); }
-  .toc-sub { color: var(--ink-soft); font-size: var(--step--1); }
+  .mp-dot { color: var(--oxide); font-size: 0.6em; }
+  .mp-horizon { margin-top: var(--space-m); }
 
-  /* Pieces */
-  .pieces { margin-top: var(--space-2xl); display: flex; flex-direction: column; gap: var(--space-2xl); }
-  .piece { scroll-margin-top: 1.5rem; }
-  .piece .rule-strong { margin-bottom: var(--space-m); }
-  .piece-eyebrow { font-family: var(--font-display); color: var(--oxide); font-size: var(--step--1); }
-  .piece-title-row { display: flex; align-items: center; gap: var(--space-m); margin-top: var(--space-2xs); }
-  .piece-title { font-size: var(--step-2); line-height: 1.1; }
-  .piece-tagline { font-family: var(--font-display); color: var(--ink-soft); font-size: var(--step-0); margin-top: 0.2rem; }
-  .piece-body { margin-top: var(--space-l); max-width: var(--measure); }
+  /* Front-page index box */
+  .index {
+    margin-top: var(--space-xl);
+    border: 1.5px solid var(--ink);
+    padding: var(--space-m) var(--space-l);
+  }
+  .index-title {
+    display: block;
+    text-align: center;
+    font-family: var(--font-display);
+    color: var(--oxide);
+    font-size: var(--step-0);
+    margin-bottom: var(--space-s);
+  }
+  .index-list {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: 0.6rem var(--space-l);
+  }
+  .index-list a { display: grid; gap: 0.1rem; padding: 0.35rem 0; border-top: 1px dotted var(--rule); }
+  .index-list li:nth-child(-n+3) a { border-top: 0; }
+  .index-name { font-family: var(--font-display); font-size: var(--step-0); }
+  .index-name::before { content: '❦'; color: var(--oxide); margin-inline-end: 0.4em; font-size: 0.8em; }
+  .index-sub { color: var(--ink-soft); font-size: var(--step--1); }
 
-  .empty { margin-top: var(--space-xl); }
+  /* Section banner */
+  .paper-section { margin-top: var(--space-2xl); scroll-margin-top: 1.5rem; }
+  .section-banner { display: flex; align-items: center; gap: var(--space-m); }
+  .section-banner::before, .section-banner::after {
+    content: ''; flex: 1; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--ink); height: 3px;
+  }
+  .sb-inner { display: flex; align-items: center; gap: 0.7rem; }
+  .sb-orn { color: var(--ink); }
+  .sb-text { display: grid; gap: 0.05rem; text-align: center; }
+  .sb-ord { font-family: var(--font-display); color: var(--oxide); font-size: var(--step--1); }
+  .sb-name { font-family: var(--font-display); font-size: var(--step-2); line-height: 1.1; }
+  .section-tagline {
+    text-align: center;
+    font-family: var(--font-display);
+    color: var(--ink-soft);
+    font-size: var(--step-0);
+    margin: 0.5rem 0 var(--space-l);
+  }
+
+  /* Colophon */
+  .colophon { margin-top: var(--space-2xl); text-align: center; }
+  .colophon .rule-double { margin-bottom: var(--space-m); }
+  .colophon-line { font-family: var(--font-display); color: var(--ink-soft); margin-bottom: var(--space-m); }
+
+  .empty { margin-top: var(--space-xl); text-align: center; }
   .empty .rule { margin-bottom: var(--space-m); }
-  .empty-line { color: var(--ink-soft); margin-bottom: var(--space-m); max-width: 48ch; }
+  .empty-line { color: var(--ink-soft); margin-bottom: var(--space-m); }
 
-  .issue-foot { margin-top: var(--space-2xl); text-align: center; }
-  .issue-foot .rule { margin-bottom: var(--space-m); }
-  .issue-foot-line { font-family: var(--font-display); color: var(--ink-soft); margin-bottom: var(--space-m); }
+  @media (max-width: 34rem) {
+    .mp-word-row { grid-template-columns: 1fr; }
+    .mp-side { display: none; }
+  }
 </style>

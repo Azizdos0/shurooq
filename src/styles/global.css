@@ -259,3 +259,38 @@ h1, h2, h3 {
   margin-inline-end: 0.4em;
 }
 .pub-statlabel { font-family: var(--font-display); font-size: var(--step-1); }
+
+/* Newspaper column flow — only inside .section-flow (the issue page), so the
+   single-column editor preview is unaffected. Rendered .pub-* content is
+   injected via set:html and can't be scoped, so these rules live here. */
+.section-flow {
+  columns: 2 17rem;
+  column-gap: clamp(1.4rem, 4vw, 3rem);
+  column-rule: 1px solid var(--rule);
+}
+.section-flow .pub-prose p { text-align: justify; text-justify: inter-word; }
+/* the lead headline + dateline span the full width, like a real front page */
+.section-flow .pub-headline {
+  column-span: all;
+  text-align: center;
+  font-size: var(--step-3);
+  line-height: 1.15;
+  margin: 0.2rem 0 var(--space-m);
+}
+.section-flow .pub-dateline { column-span: all; text-align: center; margin-bottom: var(--space-s); }
+/* keep headings attached to what follows; keep small blocks whole */
+.section-flow .pub-headline,
+.section-flow .pub-subhead,
+.section-flow .pub-label,
+.section-flow .pub-dateline { break-after: avoid; }
+.section-flow .pub-article,
+.section-flow .pub-stat { break-inside: avoid; }
+.section-flow .pub-group:first-child .pub-label { margin-top: 0; border-top: 0; }
+/* figures read as a small "by the numbers" box */
+.section-flow .pub-stat {
+  border: 1px solid var(--rule);
+  padding: var(--space-s) var(--space-m);
+  margin-top: var(--space-s);
+}
+.section-flow .pub-num { font-size: var(--step-2); display: block; margin-bottom: 0.1rem; }
+.section-flow .pub-linefield { margin-top: var(--space-m); padding-top: var(--space-s); border-top: 1px solid var(--rule); }
