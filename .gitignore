@@ -5,3 +5,8 @@ dist/
 *.log
 
 .vercel
+
+# secrets — never commit
+.env
+.env.*
+!.env.example

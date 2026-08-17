@@ -1,0 +1,96 @@
+---
+export const prerender = false; // reads live "ready" pieces from the DB
+
+import Base from '../../layouts/Base.astro';
+import Ornament from '../../components/Ornament.astro';
+import { sections } from '../../data/sections.js';
+import { getSupabase, isConfigured } from '../../lib/supabase.js';
+
+const number = Number(Astro.params.number);
+const ordinals = ['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس'];
+const orderOf = Object.fromEntries(sections.map((s, i) => [s.id, i]));
+const meta = Object.fromEntries(sections.map((s, i) => [s.id, { ...s, ordinal: ordinals[i] }]));
+
+let issue = null;
+let readyPieces = [];
+let dbError = null;
+
+if (isConfigured() && Number.isFinite(number)) {
+  try {
+    const sb = getSupabase();
+    const { data: iss } = await sb
+      .from('issues')
+      .select('id, number, title')
+      .eq('number', number)
+      .maybeSingle();
+    issue = iss;
+    if (issue) {
+      const { data: pcs } = await sb
+        .from('pieces')
+        .select('section, title, body')
+        .eq('issue_id', issue.id)
+        .eq('status', 'ready');
+      readyPieces = (pcs || []).sort((a, b) => orderOf[a.section] - orderOf[b.section]);
+    }
+  } catch (e) {
+    dbError = e.message;
+  }
+}
+
+const toParas = (body) => (body || '').split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+const title = issue?.title || `العدد ${number}`;
+---
+<Base title={title} description={`${title} — شروق`}>
+  <section class="issue-head container">
+    <hr class="rule-double" />
+    <p class="eyebrow">عددٌ من شروق</p>
+    <h1 class="issue-title">{title}</h1>
+  </section>
+
+  {readyPieces.length === 0 ? (
+    <section class="container empty">
+      <hr class="rule" />
+      <p class="empty-line">
+        لم يُنشر من هذا العدد بابٌ بعد. تُنشر الأبواب هنا فور اكتمالها.
+      </p>
+      <a class="btn" href="/archive">إلى الأرشيف</a>
+    </section>
+  ) : (
+    <div class="pieces container">
+      {readyPieces.map((p) => {
+        const m = meta[p.section];
+        return (
+          <article class="piece">
+            <hr class="rule" />
+            <p class="piece-eyebrow">الباب {m.ordinal}</p>
+            <div class="piece-title-row">
+              <Ornament name={m.ornament} size={60} />
+              <h2 class="piece-title">{p.title?.trim() || m.title}</h2>
+            </div>
+            <div class="piece-body">
+              {toParas(p.body).map((para) => <p>{para}</p>)}
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  )}
+</Base>
+
+<style>
+  .issue-head { margin-top: var(--space-m); }
+  .rule-double { margin-bottom: var(--space-m); }
+  .issue-title { font-size: var(--step-3); margin-top: 0.4rem; }
+
+  .empty { margin-top: var(--space-xl); }
+  .empty .rule { margin-bottom: var(--space-m); }
+  .empty-line { color: var(--ink-soft); margin-bottom: var(--space-m); max-width: 48ch; }
+
+  .pieces { margin-top: var(--space-xl); display: flex; flex-direction: column; gap: var(--space-2xl); }
+  .piece .rule { margin-bottom: var(--space-m); }
+  .piece-eyebrow { font-family: var(--font-display); color: var(--oxide); font-size: var(--step--1); }
+  .piece-title-row { display: flex; align-items: center; gap: var(--space-m); margin-top: var(--space-2xs); }
+  .piece-title { font-size: var(--step-2); }
+  .piece-body { margin-top: var(--space-l); max-width: var(--measure); }
+  .piece-body p { margin-bottom: var(--space-m); font-size: var(--step-1); line-height: 1.95; }
+</style>

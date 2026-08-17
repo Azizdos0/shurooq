@@ -1,0 +1,249 @@
+---
+export const prerender = false; // server-rendered internal tool
+
+import '../styles/global.css';
+import Ornament from '../components/Ornament.astro';
+import { sections } from '../data/sections.js';
+import { TAGS, TAG_LABELS } from '../lib/editor-constants.js';
+import { isConfigured } from '../lib/supabase.js';
+
+const configured = isConfigured();
+const ordinals = ['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس'];
+
+// Data handed to the client (section meta + tag vocabulary).
+const clientData = {
+  sections: sections.map((s, i) => ({
+    id: s.id,
+    title: s.title,
+    english: s.english,
+    tagline: s.tagline,
+    ordinal: ordinals[i],
+  })),
+  tags: TAGS,
+  tagLabels: TAG_LABELS,
+};
+---
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>محرّر شروق — داخلي</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Lateef:wght@400;500;600;700&family=EB+Garamond:ital@0;1&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="editor-body">
+    {!configured && (
+      <div class="config-warn">
+        قاعدة البيانات غير مهيّأة بعد. ضع مفتاح <code>SUPABASE_SERVICE_ROLE_KEY</code>
+        في ملف <code>.env</code> (انظر <code>.env.example</code>) ثم أعد تشغيل الخادم.
+      </div>
+    )}
+
+    <!-- hidden ornament set — the preview shows the active section's mark -->
+    <div class="orn-store" hidden>
+      {sections.map((s) => (
+        <span data-orn={s.id}><Ornament name={s.ornament} size={72} /></span>
+      ))}
+    </div>
+
+    <header class="bar">
+      <div class="bar-mark">
+        <span class="bar-word">شروق</span>
+        <span class="bar-tag">محرّر داخلي</span>
+      </div>
+
+      <div class="bar-controls">
+        <label class="field">
+          <span class="field-label">العدد</span>
+          <select id="issue-select"></select>
+        </label>
+        <label class="field">
+          <span class="field-label">الباب</span>
+          <select id="section-select">
+            {clientData.sections.map((s) => (
+              <option value={s.id}>{s.title}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div class="bar-actions">
+        <span id="status-note" class="status-note" role="status" aria-live="polite"></span>
+        <button id="ready-toggle" class="btn" type="button">وضع «جاهز»</button>
+        <button id="save-btn" class="btn btn-accent" type="button">حفظ</button>
+      </div>
+    </header>
+
+    <main class="editor-grid">
+      <!-- WRITE (starts on the right in RTL) -->
+      <section class="pane write-pane" aria-label="الكتابة">
+        <label class="write-title-field">
+          <span class="field-label">العنوان</span>
+          <input id="title-input" type="text" placeholder="عنوان المادة (اختياري)" />
+        </label>
+
+        <label class="write-body-field">
+          <span class="field-label">النص</span>
+          <textarea id="body-input" placeholder="اكتب هنا… افصل بين الفقرات بسطرٍ فارغ."></textarea>
+        </label>
+
+        <div class="sources">
+          <div class="sources-head">
+            <h2 class="sources-title">سِجِلُّ المصادر</h2>
+            <button id="add-source" class="btn btn-small" type="button">+ مصدر</button>
+          </div>
+          <p class="sources-hint">
+            لكلِّ مصدر وسمُ تحقُّق: موثَّق، أو روايةٌ متواترة، أو إعادة تخيُّل. داخليٌّ فقط.
+          </p>
+          <ul id="sources-list" class="sources-list"></ul>
+        </div>
+      </section>
+
+      <!-- LIVE PREVIEW -->
+      <section class="pane preview-pane" aria-label="المعاينة">
+        <div class="preview-label">معاينة — كما ستُنشر</div>
+        <article class="preview-doc">
+          <hr class="rule-double" />
+          <p class="eyebrow">الباب <span data-ordinal></span></p>
+          <div class="pv-title-row">
+            <span class="pv-orn" data-orn-slot></span>
+            <div>
+              <h1 class="pv-title" data-title></h1>
+              <p class="pv-en" data-en></p>
+            </div>
+          </div>
+          <p class="pv-tagline" data-tagline></p>
+          <div class="pv-body" data-body></div>
+        </article>
+      </section>
+    </main>
+
+    <script type="application/json" id="editor-data" set:html={JSON.stringify(clientData)}></script>
+    <script src="/editor-client.js" type="module"></script>
+
+    <style>
+      .editor-body { min-height: 100vh; display: flex; flex-direction: column; }
+      .editor-body::before { display: none; } /* no paper grain in the tool chrome */
+
+      .config-warn {
+        background: var(--oxide);
+        color: var(--paper);
+        padding: 0.7rem 1.2rem;
+        font-family: var(--font-body);
+      }
+      .config-warn code { background: rgba(255,255,255,0.18); padding: 0 0.3em; }
+
+      /* Top bar ---------------------------------------------------------- */
+      .bar {
+        display: flex;
+        align-items: center;
+        gap: var(--space-m);
+        flex-wrap: wrap;
+        padding: 0.7rem clamp(1rem, 3vw, 2rem);
+        border-bottom: 2px solid var(--ink);
+        background: var(--paper);
+      }
+      .bar-mark { display: flex; align-items: baseline; gap: 0.5rem; }
+      .bar-word { font-family: var(--font-wordmark); font-size: var(--step-2); line-height: 1; }
+      .bar-tag { font-family: var(--font-display); color: var(--oxide); font-size: var(--step--1); }
+
+      .bar-controls { display: flex; gap: var(--space-s); flex-wrap: wrap; }
+      .bar-actions { display: flex; align-items: center; gap: var(--space-s); margin-inline-start: auto; }
+
+      .field { display: flex; flex-direction: column; gap: 0.15rem; }
+      .field-label { font-family: var(--font-display); font-size: var(--step--1); color: var(--ink-soft); }
+      select, input, textarea {
+        font-family: var(--font-body);
+        font-size: var(--step-0);
+        color: var(--ink);
+        background: var(--paper);
+        border: 1.5px solid var(--rule-strong);
+        padding: 0.4em 0.6em;
+      }
+      select:focus, input:focus, textarea:focus { outline: none; border-color: var(--oxide); }
+
+      .status-note { font-family: var(--font-display); font-size: var(--step--1); color: var(--ink-faint); }
+      .status-note.saved { color: var(--ink-soft); }
+      .status-note.dirty { color: var(--oxide); }
+      .btn-small { padding: 0.3em 0.8em; font-size: var(--step--1); }
+      .btn.is-ready { background: var(--ink); color: var(--paper); }
+
+      /* Two panes -------------------------------------------------------- */
+      .editor-grid {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        min-height: 0;
+      }
+      .pane { padding: clamp(1.2rem, 3vw, 2.4rem); min-height: 0; overflow-y: auto; }
+      .write-pane { border-inline-start: 1px solid var(--rule); display: flex; flex-direction: column; gap: var(--space-m); }
+
+      .write-title-field, .write-body-field { display: flex; flex-direction: column; gap: 0.3rem; }
+      #title-input { font-family: var(--font-display); font-size: var(--step-1); }
+      #body-input {
+        min-height: 40vh;
+        resize: vertical;
+        line-height: 1.95;
+        font-size: var(--step-1);
+      }
+
+      /* Source log ------------------------------------------------------- */
+      .sources { border-top: 1px solid var(--rule); padding-top: var(--space-m); }
+      .sources-head { display: flex; align-items: center; justify-content: space-between; }
+      .sources-title { font-family: var(--font-display); font-size: var(--step-1); }
+      .sources-hint { color: var(--ink-faint); font-size: var(--step--1); margin-top: 0.2rem; }
+      .sources-list { list-style: none; padding: 0; margin-top: var(--space-s); display: flex; flex-direction: column; gap: 0.6rem; }
+      .source-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr auto auto;
+        gap: 0.5rem;
+        align-items: start;
+        border: 1px solid var(--rule);
+        padding: 0.5rem;
+      }
+      .source-row textarea { min-height: 2.6em; resize: vertical; }
+      .source-row .src-remove {
+        border: 1px solid var(--rule-strong);
+        background: transparent;
+        color: var(--ink-soft);
+        cursor: pointer;
+        padding: 0 0.6em;
+        font-size: var(--step-0);
+      }
+      .source-row .src-remove:hover { border-color: var(--oxide); color: var(--oxide); }
+      @media (max-width: 52rem) {
+        .source-row { grid-template-columns: 1fr 1fr; }
+      }
+
+      /* Preview pane — mirrors the real section page --------------------- */
+      .preview-pane { background: var(--paper-shade); }
+      .preview-label {
+        font-family: var(--font-display);
+        font-size: var(--step--1);
+        color: var(--ink-faint);
+        margin-bottom: var(--space-m);
+      }
+      .preview-doc { background: var(--paper); padding: clamp(1.4rem, 3vw, 2.6rem); border: 1px solid var(--rule); }
+      .preview-doc .rule-double { margin-bottom: var(--space-m); }
+      .pv-title-row { display: flex; align-items: center; gap: var(--space-m); margin-top: var(--space-xs); }
+      .pv-title { font-size: var(--step-3); line-height: 1.1; min-height: 1em; }
+      .pv-en { color: var(--ink-faint); font-style: italic; font-family: var(--font-latin); }
+      .pv-tagline { font-family: var(--font-display); font-size: var(--step-1); color: var(--ink-soft); margin-top: var(--space-s); }
+      .pv-body { margin-top: var(--space-l); }
+      .pv-body p { margin-bottom: var(--space-m); font-size: var(--step-1); line-height: 1.95; }
+      .pv-body .pv-empty { color: var(--ink-faint); }
+
+      @media (max-width: 52rem) {
+        .editor-grid { grid-template-columns: 1fr; }
+        .write-pane { border-inline-start: 0; border-bottom: 2px solid var(--ink); }
+      }
+    </style>
+  </body>
+</html>
