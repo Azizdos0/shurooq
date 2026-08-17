@@ -5,6 +5,7 @@ import Base from '../../layouts/Base.astro';
 import Ornament from '../../components/Ornament.astro';
 import { sections } from '../../data/sections.js';
 import { getSupabase, isConfigured } from '../../lib/supabase.js';
+import { renderPieceBody } from '../../lib/templates.js';
 
 const number = Number(Astro.params.number);
 const ordinals = ['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس'];
@@ -27,7 +28,7 @@ if (isConfigured() && Number.isFinite(number)) {
     if (issue) {
       const { data: pcs } = await sb
         .from('pieces')
-        .select('section, title, body')
+        .select('section, title, content')
         .eq('issue_id', issue.id)
         .eq('status', 'ready');
       readyPieces = (pcs || []).sort((a, b) => orderOf[a.section] - orderOf[b.section]);
@@ -37,7 +38,6 @@ if (isConfigured() && Number.isFinite(number)) {
   }
 }
 
-const toParas = (body) => (body || '').split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
 const title = issue?.title || `العدد ${number}`;
 ---
 <Base title={title} description={`${title} — شروق`}>
@@ -65,11 +65,9 @@ const title = issue?.title || `العدد ${number}`;
             <p class="piece-eyebrow">الباب {m.ordinal}</p>
             <div class="piece-title-row">
               <Ornament name={m.ornament} size={60} />
-              <h2 class="piece-title">{p.title?.trim() || m.title}</h2>
+              <h2 class="piece-title">{m.title}</h2>
             </div>
-            <div class="piece-body">
-              {toParas(p.body).map((para) => <p>{para}</p>)}
-            </div>
+            <div class="piece-body" set:html={renderPieceBody(p.section, p.content)} />
           </article>
         );
       })}

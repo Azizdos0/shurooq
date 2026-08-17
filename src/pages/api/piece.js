@@ -2,6 +2,7 @@ export const prerender = false;
 
 import { getSupabase } from '../../lib/supabase.js';
 import { SECTION_IDS, PIECE_STATUSES, TAGS } from '../../lib/editor-constants.js';
+import { deriveTitle } from '../../lib/templates.js';
 
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -53,8 +54,13 @@ export async function POST({ request }) {
       return json({ error: 'issueId and a valid section are required' }, 400);
     }
     const status = PIECE_STATUSES.includes(payload.status) ? payload.status : 'draft';
-    const title = typeof payload.title === 'string' ? payload.title : '';
-    const body = typeof payload.body === 'string' ? payload.body : '';
+    const content =
+      payload.content && typeof payload.content === 'object' && !Array.isArray(payload.content)
+        ? payload.content
+        : {};
+    // Title is derived from the template's headline field (keeps the archive
+    // and editor tab labelled without a separate title input).
+    const title = deriveTitle(section, content, '');
 
     const sb = getSupabase();
 
@@ -62,7 +68,7 @@ export async function POST({ request }) {
     const { data: piece, error: upErr } = await sb
       .from('pieces')
       .upsert(
-        { issue_id: issueId, section, title, body, status },
+        { issue_id: issueId, section, title, content, status },
         { onConflict: 'issue_id,section' }
       )
       .select()
