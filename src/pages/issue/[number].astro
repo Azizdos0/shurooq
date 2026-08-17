@@ -3,6 +3,7 @@ export const prerender = false; // reads live "ready" pieces from the DB
 
 import Base from '../../layouts/Base.astro';
 import Ornament from '../../components/Ornament.astro';
+import Engraving from '../../components/Engraving.astro';
 import SunVignette from '../../components/SunVignette.astro';
 import { sections } from '../../data/sections.js';
 import { getSupabase, isConfigured } from '../../lib/supabase.js';
@@ -12,6 +13,18 @@ const number = Number(Astro.params.number);
 const ordinals = ['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس'];
 const orderOf = Object.fromEntries(sections.map((s, i) => [s.id, i]));
 const meta = Object.fromEntries(sections.map((s, i) => [s.id, { ...s, ordinal: ordinals[i] }]));
+
+// One image per section: a real, verifiably public-domain photo for the
+// Progress Paper (contemporary/factual); honestly-captioned illustrative
+// engravings for the four historical/speculative sections.
+const EARTH_PHOTO_URL = 'https://commons.wikimedia.org/wiki/Special:FilePath/The_Blue_Marble,_AS17-148-22727.jpg?width=1200';
+const EARTH_PHOTO_CAPTION = 'الأرضُ كما صوّرها طاقمُ أبولو ١٧ في طريقهم إلى القمر، ٧ ديسمبر ١٩٧٢. تصوير: هاريسون شميت — وكالة ناسا. الصورةُ في المُلك العام.';
+const ENGRAVING_CAPTIONS = {
+  lost: 'رسمٌ توضيحي بأسلوب الحفر القديم: رصدُ الفلكيين لدرجة الزوال في سهل سِنجار.',
+  people: 'رسمٌ توضيحي بأسلوب الحفر القديم: مشهدٌ من سوقٍ بغداديّ.',
+  without: 'رسمٌ توضيحي بأسلوب الحفر القديم: مفترقُ الاحتمالات — طريقٌ يُضيء، وآخرُ يتلاشى.',
+  internet: 'رسمٌ توضيحي بأسلوب الحفر القديم: شبكةٌ من العُقَد المتصلة.',
+};
 
 const arDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
 const toAr = (n) => String(n).split('').map((d) => arDigits[+d] ?? d).join('');
@@ -164,6 +177,16 @@ const totalPages = readyPieces.length + 1;
                 </span>
               </div>
               <p class="section-tagline">{m.tagline}</p>
+
+              {p.section === 'progress' ? (
+                <figure class="section-photo">
+                  <img src={EARTH_PHOTO_URL} alt="الأرض مصوَّرةً من الفضاء" />
+                  <figcaption>{EARTH_PHOTO_CAPTION}</figcaption>
+                </figure>
+              ) : (
+                <Engraving name={p.section} caption={ENGRAVING_CAPTIONS[p.section]} />
+              )}
+
               <div class="section-flow" set:html={renderPieceBody(p.section, p.content)} />
             </article>
           );
@@ -556,6 +579,24 @@ const totalPages = readyPieces.length + 1;
   .sb-ord { font-family: var(--font-display); color: var(--oxide); font-size: var(--step--1); }
   .sb-name { font-family: var(--font-display); font-size: var(--step-2); line-height: 1.1; }
   .section-tagline { text-align: center; font-family: var(--font-display); color: var(--ink-soft); font-size: var(--step-0); margin: 0.5rem 0 var(--space-l); }
+
+  .section-photo { margin: 0 0 var(--space-l); text-align: center; }
+  .section-photo img {
+    display: inline-block;
+    max-width: min(100%, 30rem);
+    width: 100%;
+    height: auto;
+    filter: grayscale(0.25) sepia(0.12) contrast(1.02);
+  }
+  .section-photo figcaption {
+    margin-top: 0.5rem;
+    font-family: var(--font-display);
+    font-style: italic;
+    color: var(--ink-faint);
+    font-size: var(--step--1);
+    max-width: 34rem;
+    margin-inline: auto;
+  }
 
   @media (max-width: 46rem) {
     .cover-grid { grid-template-columns: 1fr; }
