@@ -6,13 +6,15 @@ import Ornament from '../../components/Ornament.astro';
 import SunVignette from '../../components/SunVignette.astro';
 import { sections } from '../../data/sections.js';
 import { getSupabase, isConfigured } from '../../lib/supabase.js';
-import { renderPieceBody } from '../../lib/templates.js';
+import { renderPieceBody, deriveExcerpt } from '../../lib/templates.js';
 
 const number = Number(Astro.params.number);
 const ordinals = ['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس'];
-const arNum = { 1: '٠١', 2: '٠٢', 3: '٠٣', 4: '٠٤', 5: '٠٥' };
 const orderOf = Object.fromEntries(sections.map((s, i) => [s.id, i]));
 const meta = Object.fromEntries(sections.map((s, i) => [s.id, { ...s, ordinal: ordinals[i] }]));
+
+const arDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+const toAr = (n) => String(n).split('').map((d) => arDigits[+d] ?? d).join('');
 
 let issue = null;
 let readyPieces = [];
@@ -33,62 +35,125 @@ if (isConfigured() && Number.isFinite(number)) {
 }
 
 const title = issue?.title || `العدد ${number}`;
-const issueNo = arNum[number] || number;
+const issueNo = toAr(String(number).padStart(2, '0'));
+
+// Front page: a lead teaser (prefer the Lost Newspaper — it reads most like
+// front-page news) plus briefs for the rest, and a page-number map.
+const leadPiece = readyPieces.find((p) => p.section === 'lost') || readyPieces[0] || null;
+const otherPieces = readyPieces.filter((p) => p !== leadPiece);
+const pageNoOf = Object.fromEntries(readyPieces.map((p, i) => [p.section, i + 2]));
+const totalPages = readyPieces.length + 1;
 ---
 <Base title={title} description={`${title} — شروق`}>
-  <div class="paper container">
-    <!-- Nameplate ------------------------------------------------------- -->
-    <header class="masthead">
-      <hr class="rule-hair" />
-      <div class="mp-word-row">
-        <span class="mp-side">السنةُ الأولى</span>
-        <h1 class="mp-word">شروق</h1>
-        <span class="mp-side mp-end">العددُ {issueNo}</span>
+  {readyPieces.length === 0 ? (
+    <section class="container empty">
+      <hr class="rule" />
+      <p class="empty-line">لم يُنشر من هذا العدد بابٌ بعد. تُنشر الأبواب هنا فور اكتمالها.</p>
+      <a class="btn" href="/archive">إلى الأرشيف</a>
+    </section>
+  ) : (
+    <div class="flipbook" id="flipbook">
+      <div class="fb-toolbar">
+        <a class="fb-exit" href="/archive">‹ الأرشيف</a>
+        <div class="fb-indicator">
+          <span id="fb-current">١</span><span class="fb-sep">/</span><span id="fb-total">{toAr(totalPages)}</span>
+        </div>
+        <button class="fb-mute" id="fb-mute" type="button" aria-pressed="false" aria-label="كتم صوت تقليب الصفحات">
+          <svg class="fb-mute-on" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16.5 9a4 4 0 0 1 0 6M19 6.5a8 8 0 0 1 0 11"/></svg>
+          <svg class="fb-mute-off" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" hidden><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="m16 9 5 6M21 9l-5 6"/></svg>
+        </button>
       </div>
-      <p class="mp-tag">أن نرى العالمَ بعينٍ جديدة</p>
-      <div class="mp-strip">
-        <span>{title}</span>
-        <span class="mp-dot">◆</span>
-        <span>آب ٢٠٢٦</span>
-        <span class="mp-dot">◆</span>
-        <span>خمسةُ أبواب</span>
-        <span class="mp-dot">◆</span>
-        <span>مجّانًا</span>
-      </div>
-      <div class="mp-horizon"><SunVignette /></div>
-    </header>
 
-    {readyPieces.length === 0 ? (
-      <section class="empty">
-        <hr class="rule" />
-        <p class="empty-line">لم يُنشر من هذا العدد بابٌ بعد. تُنشر الأبواب هنا فور اكتمالها.</p>
-        <a class="btn" href="/archive">إلى الأرشيف</a>
-      </section>
-    ) : (
-      <>
-        <!-- Front-page index -------------------------------------------- -->
-        <nav class="index" aria-label="في هذا العدد">
-          <span class="index-title">في هذا العدد</span>
-          <ul class="index-list">
+      <div class="fb-viewport" id="fb-viewport">
+        <!-- Page 1 — front page mosaic ---------------------------------- -->
+        <section class="fb-page fb-cover is-active" data-index="0">
+          <header class="masthead">
+            <hr class="rule-hair" />
+            <div class="mp-word-row">
+              <span class="mp-side">السنةُ الأولى</span>
+              <h1 class="mp-word">شروق</h1>
+              <span class="mp-side mp-end">العددُ {issueNo}</span>
+            </div>
+            <p class="mp-tag">أن نرى العالمَ بعينٍ جديدة</p>
+            <div class="mp-strip">
+              <span>{title}</span><span class="mp-dot">◆</span>
+              <span>آب ٢٠٢٦</span><span class="mp-dot">◆</span>
+              <span>خمسةُ أبواب</span><span class="mp-dot">◆</span>
+              <span>مجّانًا</span>
+            </div>
+            <div class="mp-horizon"><SunVignette /></div>
+          </header>
+
+          <div class="cover-grid">
+            <div class="cover-lead">
+              {leadPiece && (() => {
+                const m = meta[leadPiece.section];
+                return (
+                  <>
+                    <p class="cl-eyebrow">الباب {m.ordinal} — {m.title}</p>
+                    <h2 class="cl-headline">{leadPiece.title?.trim() || m.title}</h2>
+                    <p class="cl-excerpt">{deriveExcerpt(leadPiece.section, leadPiece.content, 280)}</p>
+                    <button class="cl-more" type="button" data-goto={pageNoOf[leadPiece.section] - 1}>
+                      تتمّةٌ في الصفحة {toAr(pageNoOf[leadPiece.section])} ←
+                    </button>
+                  </>
+                );
+              })()}
+            </div>
+
+            <aside class="cover-aside">
+              <div class="cover-box">
+                <p class="cb-title">كيف نقرأ هذا العدد</p>
+                <ul class="cb-marks">
+                  <li><span class="cb-mark cb-verified">موثَّق</span> مسنودٌ إلى مصدر</li>
+                  <li><span class="cb-mark cb-reported">روايةٌ متواترة</span> غير مؤكَّدة تمامًا</li>
+                  <li><span class="cb-mark cb-reconstructed">إعادة تخيُّل</span> تفصيلٌ أسلوبيّ</li>
+                </ul>
+              </div>
+
+              {otherPieces.length > 0 && (
+                <ul class="cover-briefs">
+                  {otherPieces.map((p) => {
+                    const m = meta[p.section];
+                    return (
+                      <li>
+                        <button type="button" data-goto={pageNoOf[p.section] - 1}>
+                          <span class="brief-orn"><Ornament name={m.ornament} size={26} /></span>
+                          <span class="brief-text">
+                            <span class="brief-name">{m.title}</span>
+                            <span class="brief-line">{deriveExcerpt(p.section, p.content, 64)}</span>
+                          </span>
+                          <span class="brief-page">{toAr(pageNoOf[p.section])}</span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </aside>
+          </div>
+
+          <nav class="cover-index" aria-label="فهرس الصفحات">
             {readyPieces.map((p) => {
               const m = meta[p.section];
               return (
-                <li>
-                  <a href={`#bab-${p.section}`}>
-                    <span class="index-name">{m.title}</span>
-                    {p.title?.trim() && <span class="index-sub">{p.title}</span>}
-                  </a>
-                </li>
+                <button type="button" data-goto={pageNoOf[p.section] - 1}>
+                  {m.title} <span class="ci-num">{toAr(pageNoOf[p.section])}</span>
+                </button>
               );
             })}
-          </ul>
-        </nav>
+          </nav>
+        </section>
 
-        <!-- Sections ----------------------------------------------------- -->
-        {readyPieces.map((p) => {
+        <!-- Pages 2..N — one per section ---------------------------------- -->
+        {readyPieces.map((p, i) => {
           const m = meta[p.section];
           return (
-            <article class="paper-section" id={`bab-${p.section}`}>
+            <article class="fb-page" data-index={i + 1} id={`bab-${p.section}`}>
+              <div class="fb-page-head">
+                <span class="fb-page-no">صفحة {toAr(i + 2)}</span>
+                <span class="fb-page-masthead">شروق — العدد {issueNo}</span>
+              </div>
               <div class="section-banner">
                 <span class="sb-inner">
                   <span class="sb-orn"><Ornament name={m.ornament} size={38} /></span>
@@ -103,108 +168,399 @@ const issueNo = arNum[number] || number;
             </article>
           );
         })}
+      </div>
 
-        <footer class="colophon">
-          <hr class="rule-double" />
-          <p class="colophon-line">تمّ العدد — تُبنى موادُّ شروق على بحثٍ موثَّق.</p>
-          <a class="btn" href="/archive">إلى الأرشيف</a>
-        </footer>
-      </>
-    )}
-  </div>
+      <div class="fb-controls">
+        <button class="fb-btn" id="fb-prev" type="button" aria-label="الصفحة السابقة"><span aria-hidden="true">›</span></button>
+        <button class="fb-btn" id="fb-next" type="button" aria-label="الصفحة التالية"><span aria-hidden="true">‹</span></button>
+      </div>
+
+      <div class="fb-edge fb-edge-prev" id="fb-edge-prev" aria-hidden="true"></div>
+      <div class="fb-edge fb-edge-next" id="fb-edge-next" aria-hidden="true"></div>
+    </div>
+  )}
 </Base>
 
-<style>
-  .paper { padding-top: var(--space-m); }
+<script>
+  const root = document.getElementById('flipbook');
+  if (root) {
+    const viewport = document.getElementById('fb-viewport');
+    const pages = [...viewport.querySelectorAll('.fb-page')];
+    const total = pages.length;
+    const currentEl = document.getElementById('fb-current');
+    const prevBtn = document.getElementById('fb-prev');
+    const nextBtn = document.getElementById('fb-next');
+    const edgePrev = document.getElementById('fb-edge-prev');
+    const edgeNext = document.getElementById('fb-edge-next');
+    const muteBtn = document.getElementById('fb-mute');
 
-  /* Nameplate */
-  .masthead { text-align: center; }
-  .rule-hair { border: 0; border-top: 1px solid var(--ink); }
-  .mp-word-row {
+    const arDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    const toAr = (n) => String(n).split('').map((d) => arDigits[+d] ?? d).join('');
+
+    let index = 0;
+    let animating = false;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // ---- synthesized page-flip sound (no external audio file) -----------
+    let audioCtx = null;
+    let muted = localStorage.getItem('shurooq-flip-sound') === 'off';
+    function reflectMute() {
+      muteBtn.setAttribute('aria-pressed', String(muted));
+      muteBtn.querySelector('.fb-mute-on').hidden = muted;
+      muteBtn.querySelector('.fb-mute-off').hidden = !muted;
+    }
+    reflectMute();
+    muteBtn.addEventListener('click', () => {
+      muted = !muted;
+      localStorage.setItem('shurooq-flip-sound', muted ? 'off' : 'on');
+      reflectMute();
+    });
+
+    function ensureAudio() {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return null;
+      if (!audioCtx) audioCtx = new Ctx();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+    function noiseBurst(ctx, when, dur, freq, peak) {
+      const size = Math.max(1, Math.floor(ctx.sampleRate * dur));
+      const buf = ctx.createBuffer(1, size, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < size; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / size);
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = freq;
+      filter.Q.value = 0.9;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.0001, when);
+      gain.gain.exponentialRampToValueAtTime(peak, when + 0.006);
+      gain.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+      src.connect(filter).connect(gain).connect(ctx.destination);
+      src.start(when);
+      src.stop(when + dur + 0.02);
+    }
+    function playFlip() {
+      if (muted) return;
+      const ctx = ensureAudio();
+      if (!ctx) return;
+      try {
+        const now = ctx.currentTime;
+        noiseBurst(ctx, now, 0.12, 2600, 0.35);
+        noiseBurst(ctx, now + 0.05, 0.14, 1500, 0.26);
+      } catch (e) { /* audio unavailable — fail silently */ }
+    }
+
+    // ---- navigation / 3D flip -------------------------------------------
+    function goTo(target) {
+      target = Math.max(0, Math.min(total - 1, target));
+      if (target === index || animating) return;
+      const dir = target > index ? 'next' : 'prev';
+      const outgoing = pages[index];
+      const incoming = pages[target];
+      animating = true;
+
+      viewport.style.height = Math.max(outgoing.scrollHeight, incoming.scrollHeight) + 'px';
+
+      const finish = () => {
+        // Clear every inline override so the stylesheet (driven purely by
+        // .is-active) is fully back in charge — nothing should linger that
+        // could fight the no-JS fallback if .js-ready were ever removed.
+        for (const el of [outgoing, incoming]) {
+          el.style.visibility = '';
+          el.style.transform = '';
+          el.style.transformOrigin = '';
+          el.style.opacity = '';
+          el.style.zIndex = '';
+        }
+        viewport.style.height = incoming.scrollHeight + 'px';
+        animating = false;
+        incoming.removeEventListener('transitionend', finish);
+      };
+
+      if (reduceMotion) {
+        outgoing.classList.remove('is-active');
+        incoming.classList.add('is-active');
+        finish();
+      } else {
+        // Prime the incoming page's starting pose with transitions off...
+        incoming.style.transition = 'none';
+        incoming.style.visibility = 'visible';
+        incoming.style.opacity = '0';
+        incoming.style.zIndex = '2';
+        incoming.style.transformOrigin = dir === 'next' ? 'right center' : 'left center';
+        incoming.style.transform = dir === 'next' ? 'rotateY(100deg)' : 'rotateY(-100deg)';
+        outgoing.style.zIndex = '1';
+        // ...force the browser to flush that starting pose (synchronous,
+        // does not depend on a paint/rAF cycle)...
+        void incoming.offsetHeight;
+        // ...then re-enable transitions and set the resting pose: the
+        // browser now animates from the flushed start to this end state.
+        incoming.style.transition = '';
+        incoming.classList.add('is-active');
+        incoming.style.opacity = '1';
+        incoming.style.transform = 'rotateY(0deg)';
+
+        outgoing.classList.remove('is-active');
+        outgoing.style.transformOrigin = dir === 'next' ? 'left center' : 'right center';
+        outgoing.style.transform = dir === 'next' ? 'rotateY(-100deg)' : 'rotateY(100deg)';
+        outgoing.style.opacity = '0';
+
+        incoming.addEventListener('transitionend', finish);
+        setTimeout(() => { if (animating) finish(); }, 700);
+      }
+
+      playFlip();
+      index = target;
+      currentEl.textContent = toAr(index + 1);
+      prevBtn.disabled = index === 0;
+      nextBtn.disabled = index === total - 1;
+      history.replaceState(null, '', index === 0 ? location.pathname : `#${pages[index].id}`);
+    }
+
+    prevBtn.addEventListener('click', () => goTo(index - 1));
+    nextBtn.addEventListener('click', () => goTo(index + 1));
+    edgePrev.addEventListener('click', () => goTo(index - 1));
+    edgeNext.addEventListener('click', () => goTo(index + 1));
+    root.querySelectorAll('[data-goto]').forEach((btn) => {
+      btn.addEventListener('click', () => goTo(Number(btn.dataset.goto)));
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+      if (e.key === 'ArrowLeft') goTo(index + 1);       // forward = toward the left in RTL
+      else if (e.key === 'ArrowRight') goTo(index - 1);  // back = toward the right
+      else if (e.key === 'Home') goTo(0);
+      else if (e.key === 'End') goTo(total - 1);
+    });
+
+    let touchX = null;
+    viewport.addEventListener('touchstart', (e) => { touchX = e.touches[0].clientX; }, { passive: true });
+    viewport.addEventListener('touchend', (e) => {
+      if (touchX == null) return;
+      const dx = e.changedTouches[0].clientX - touchX;
+      if (Math.abs(dx) > 40) goTo(dx < 0 ? index + 1 : index - 1);
+      touchX = null;
+    }, { passive: true });
+
+    // initial state (supports deep-linking to #bab-<section>)
+    prevBtn.disabled = true;
+    nextBtn.disabled = total <= 1;
+    currentEl.textContent = toAr(1);
+    const hashIdx = pages.findIndex((p) => p.id === location.hash.slice(1));
+    if (hashIdx > 0) {
+      pages[0].classList.remove('is-active');
+      pages[hashIdx].classList.add('is-active');
+      index = hashIdx;
+      currentEl.textContent = toAr(index + 1);
+      prevBtn.disabled = false;
+      nextBtn.disabled = index === total - 1;
+    }
+    viewport.style.height = pages[index].scrollHeight + 'px';
+    let resizeT;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeT);
+      resizeT = setTimeout(() => { viewport.style.height = pages[index].scrollHeight + 'px'; }, 150);
+    });
+
+    root.classList.add('js-ready');
+  }
+</script>
+
+<style>
+  .empty { margin-top: var(--space-xl); text-align: center; }
+  .empty .rule { margin-bottom: var(--space-m); }
+  .empty-line { color: var(--ink-soft); margin-bottom: var(--space-m); }
+
+  /* Flipbook shell ------------------------------------------------------- */
+  .flipbook {
+    max-width: var(--container);
+    margin-inline: auto;
+    padding-inline: clamp(1.2rem, 5vw, 3rem);
+    padding-bottom: var(--space-xl);
+    margin-top: var(--space-s);
+    position: relative;
+  }
+
+  .fb-toolbar {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: auto 1fr auto;
     align-items: center;
     gap: var(--space-m);
-    margin-top: var(--space-s);
+    padding-block: 0.6rem;
+    border-bottom: 1px solid var(--rule);
   }
+  .fb-exit { font-family: var(--font-display); color: var(--ink-soft); font-size: var(--step-0); }
+  .fb-exit:hover { color: var(--oxide); }
+  .fb-indicator {
+    text-align: center;
+    font-family: var(--font-display);
+    color: var(--ink-soft);
+    font-size: var(--step-0);
+  }
+  .fb-sep { margin: 0 0.3em; color: var(--ink-faint); }
+  .fb-mute {
+    justify-self: end;
+    width: 2.1rem; height: 2.1rem;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--rule-strong);
+    background: transparent;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .fb-mute:hover { border-color: var(--oxide); color: var(--oxide); }
+  .fb-mute[aria-pressed="true"] { color: var(--ink-faint); border-style: dashed; }
+
+  /* Viewport + page mechanics --------------------------------------------- */
+  .fb-viewport {
+    position: relative;
+    perspective: 1800px;
+    overflow: visible;
+    transition: height 0.5s var(--ease);
+    margin-top: var(--space-m);
+  }
+  .flipbook.js-ready .fb-page {
+    position: absolute;
+    top: 0; inset-inline: 0;
+    width: 100%;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: rotateY(0deg);
+    backface-visibility: hidden;
+    transition: transform 0.55s cubic-bezier(0.45, 0, 0.4, 1), opacity 0.4s ease;
+  }
+  .flipbook.js-ready .fb-page.is-active {
+    opacity: 1; visibility: visible; pointer-events: auto; z-index: 2;
+  }
+  .flipbook:not(.js-ready) .fb-page { margin-bottom: var(--space-2xl); }
+
+  /* Prev/next controls */
+  .fb-controls { display: flex; justify-content: center; gap: var(--space-m); margin-top: var(--space-l); }
+  .flipbook:not(.js-ready) .fb-controls, .flipbook:not(.js-ready) .fb-edge { display: none; }
+  .fb-btn {
+    width: 2.8rem; height: 2.8rem;
+    border: 1.5px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    font-size: var(--step-2);
+    line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s var(--ease), color 0.2s var(--ease);
+  }
+  .fb-btn:hover:not(:disabled) { background: var(--ink); color: var(--paper); }
+  .fb-btn:disabled { opacity: 0.3; cursor: default; }
+
+  .fb-edge {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 14%;
+    cursor: pointer;
+    z-index: 3;
+  }
+  .fb-edge-prev { inset-inline-end: 0; }
+  .fb-edge-next { inset-inline-start: 0; }
+  .fb-edge::after {
+    content: '';
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 1.6rem; height: 1.6rem;
+    opacity: 0;
+    transition: opacity 0.2s var(--ease);
+    border-top: 2px solid var(--oxide);
+    border-inline-end: 2px solid var(--oxide);
+  }
+  .fb-edge-prev::after { inset-inline-end: 0.6rem; transform: translateY(-50%) rotate(45deg); }
+  .fb-edge-next::after { inset-inline-start: 0.6rem; transform: translateY(-50%) rotate(-135deg); }
+  .fb-edge:hover::after { opacity: 0.5; }
+
+  /* Cover page (front page mosaic) ---------------------------------------- */
+  .masthead { text-align: center; }
+  .rule-hair { border: 0; border-top: 1px solid var(--ink); }
+  .mp-word-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--space-m); margin-top: var(--space-s); }
   .mp-side { font-family: var(--font-display); color: var(--ink-soft); font-size: var(--step-0); }
   .mp-end { text-align: end; }
   .mp-word { font-family: var(--font-wordmark); font-size: var(--step-4); line-height: 0.9; }
   .mp-tag { font-family: var(--font-display); color: var(--ink-soft); font-size: var(--step-1); margin-top: 0.4rem; }
   .mp-strip {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    gap: 0.6rem;
-    margin-top: var(--space-s);
-    padding: 0.5rem 0;
-    border-top: 1px solid var(--ink);
-    border-bottom: 1px solid var(--ink);
-    font-family: var(--font-display);
-    font-size: var(--step--1);
-    color: var(--ink-soft);
+    display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0.6rem;
+    margin-top: var(--space-s); padding: 0.5rem 0;
+    border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink);
+    font-family: var(--font-display); font-size: var(--step--1); color: var(--ink-soft);
   }
   .mp-dot { color: var(--oxide); font-size: 0.6em; }
   .mp-horizon { margin-top: var(--space-m); }
 
-  /* Front-page index box */
-  .index {
-    margin-top: var(--space-xl);
-    border: 1.5px solid var(--ink);
-    padding: var(--space-m) var(--space-l);
+  .cover-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: var(--space-l); margin-top: var(--space-xl); align-items: start; }
+  .cl-eyebrow { font-family: var(--font-display); color: var(--oxide); font-size: var(--step--1); }
+  .cl-headline { font-size: var(--step-3); line-height: 1.15; margin-top: 0.3rem; }
+  .cl-excerpt { margin-top: var(--space-m); font-size: var(--step-1); line-height: 1.9; color: var(--ink); }
+  .cl-more {
+    display: inline-block; margin-top: var(--space-s);
+    font-family: var(--font-display); color: var(--oxide);
+    background: none; border: none; padding: 0; cursor: pointer; font-size: var(--step-0);
   }
-  .index-title {
-    display: block;
-    text-align: center;
-    font-family: var(--font-display);
-    color: var(--oxide);
-    font-size: var(--step-0);
-    margin-bottom: var(--space-s);
-  }
-  .index-list {
-    list-style: none;
-    padding: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-    gap: 0.6rem var(--space-l);
-  }
-  .index-list a { display: grid; gap: 0.1rem; padding: 0.35rem 0; border-top: 1px dotted var(--rule); }
-  .index-list li:nth-child(-n+3) a { border-top: 0; }
-  .index-name { font-family: var(--font-display); font-size: var(--step-0); }
-  .index-name::before { content: '❦'; color: var(--oxide); margin-inline-end: 0.4em; font-size: 0.8em; }
-  .index-sub { color: var(--ink-soft); font-size: var(--step--1); }
+  .cl-more:hover { text-decoration: underline; }
 
-  /* Section banner */
-  .paper-section { margin-top: var(--space-2xl); scroll-margin-top: 1.5rem; }
-  .section-banner { display: flex; align-items: center; gap: var(--space-m); }
-  .section-banner::before, .section-banner::after {
-    content: ''; flex: 1; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--ink); height: 3px;
+  .cover-aside { display: flex; flex-direction: column; gap: var(--space-l); }
+  .cover-box { border: 1px solid var(--rule-strong); padding: var(--space-m); }
+  .cb-title { font-family: var(--font-display); color: var(--oxide); font-size: var(--step-0); margin-bottom: var(--space-s); }
+  .cb-marks { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+  .cb-marks li { display: flex; align-items: baseline; gap: 0.5rem; font-size: var(--step--1); color: var(--ink-soft); }
+  .cb-mark { font-family: var(--font-display); font-weight: 700; font-size: var(--step--1); border: 1.3px solid var(--oxide); color: var(--oxide); padding: 0.05em 0.55em; white-space: nowrap; }
+  .cb-reported { border-color: var(--ink-soft); color: var(--ink-soft); }
+  .cb-reconstructed { border-color: var(--ink-faint); color: var(--ink-faint); border-style: dashed; }
+
+  .cover-briefs { list-style: none; padding: 0; display: flex; flex-direction: column; }
+  .cover-briefs li { border-top: 1px dotted var(--rule); }
+  .cover-briefs button {
+    width: 100%; display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.6rem 0.1rem; background: none; border: none; cursor: pointer; text-align: start;
   }
+  .cover-briefs button:hover .brief-name { color: var(--oxide); }
+  .brief-orn { color: var(--ink); flex: none; }
+  .brief-text { display: grid; gap: 0.1rem; flex: 1; min-width: 0; }
+  .brief-name { font-family: var(--font-display); font-size: var(--step-0); transition: color 0.2s var(--ease); }
+  .brief-line { color: var(--ink-faint); font-size: var(--step--1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .brief-page { font-family: var(--font-display); color: var(--ink-faint); font-size: var(--step--1); flex: none; }
+
+  .cover-index {
+    margin-top: var(--space-xl);
+    padding-top: var(--space-m);
+    border-top: 1px solid var(--ink);
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 0 var(--space-m);
+  }
+  .cover-index button {
+    background: none; border: none; cursor: pointer;
+    font-family: var(--font-display); color: var(--ink-soft); font-size: var(--step--1);
+    padding: 0.3rem 0;
+  }
+  .cover-index button:hover { color: var(--oxide); }
+  .ci-num { color: var(--oxide); }
+
+  /* Section pages ----------------------------------------------------------- */
+  .fb-page-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 0.4rem;
+    margin-bottom: var(--space-m);
+    font-family: var(--font-display); font-size: var(--step--1); color: var(--ink-faint);
+  }
+  .section-banner { display: flex; align-items: center; gap: var(--space-m); }
+  .section-banner::before, .section-banner::after { content: ''; flex: 1; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--ink); height: 3px; }
   .sb-inner { display: flex; align-items: center; gap: 0.7rem; }
   .sb-orn { color: var(--ink); }
   .sb-text { display: grid; gap: 0.05rem; text-align: center; }
   .sb-ord { font-family: var(--font-display); color: var(--oxide); font-size: var(--step--1); }
   .sb-name { font-family: var(--font-display); font-size: var(--step-2); line-height: 1.1; }
-  .section-tagline {
-    text-align: center;
-    font-family: var(--font-display);
-    color: var(--ink-soft);
-    font-size: var(--step-0);
-    margin: 0.5rem 0 var(--space-l);
-  }
+  .section-tagline { text-align: center; font-family: var(--font-display); color: var(--ink-soft); font-size: var(--step-0); margin: 0.5rem 0 var(--space-l); }
 
-  /* Colophon */
-  .colophon { margin-top: var(--space-2xl); text-align: center; }
-  .colophon .rule-double { margin-bottom: var(--space-m); }
-  .colophon-line { font-family: var(--font-display); color: var(--ink-soft); margin-bottom: var(--space-m); }
-
-  .empty { margin-top: var(--space-xl); text-align: center; }
-  .empty .rule { margin-bottom: var(--space-m); }
-  .empty-line { color: var(--ink-soft); margin-bottom: var(--space-m); }
-
-  @media (max-width: 34rem) {
+  @media (max-width: 46rem) {
+    .cover-grid { grid-template-columns: 1fr; }
     .mp-word-row { grid-template-columns: 1fr; }
     .mp-side { display: none; }
+    .fb-edge { width: 10%; }
   }
 </style>

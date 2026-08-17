@@ -128,6 +128,26 @@ export function deriveTitle(sectionId, content, fallback = '') {
   return (typeof v === 'string' && v.trim()) ? v.trim() : fallback;
 }
 
+// Which prose field reads best as a one-line teaser, per section.
+const EXCERPT_FIELD = {
+  progress: 'intro',
+  lost: 'lead_body',
+  people: 'intro',
+  without: 'divergence',
+  internet: 'intro',
+};
+
+// A short, word-safe plain-text excerpt for front-page teasers.
+export function deriveExcerpt(sectionId, content = {}, maxLen = 120) {
+  const fieldId = EXCERPT_FIELD[sectionId];
+  const first = paras(fieldId ? content[fieldId] : '')[0] || '';
+  if (!first) return '';
+  if (first.length <= maxLen) return first;
+  const cut = first.slice(0, maxLen);
+  const lastSpace = cut.lastIndexOf(' ');
+  return (lastSpace > 40 ? cut.slice(0, lastSpace) : cut).trim() + '…';
+}
+
 // Render the structured BODY of a piece to an HTML string (values escaped).
 // The section header (ornament + name) is rendered by the page, not here.
 export function renderPieceBody(sectionId, content = {}) {
