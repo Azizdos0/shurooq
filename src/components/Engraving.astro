@@ -2,8 +2,10 @@
 // Large "newspaper cut" illustrations — vintage engraving style, ink-only,
 // matching the small Ornament marks but scaled up into proper scenes.
 // These are honestly captioned as illustrative drawings, not artifacts.
-const { name, caption, zone, class: className = '' } = Astro.props;
-const uid = name; // unique-enough per page since each section appears once
+const { name, caption, zone, variant, class: className = '' } = Astro.props;
+// SVG pattern ids must be unique per instance — the same engraving can appear
+// on both the cover and its section page, so a variant keeps ids from colliding.
+const uid = variant ? `${name}-${variant}` : name;
 ---
 <figure class={`engraving pub-field ${className}`} data-zone={zone}>
   <div class="engraving-frame">

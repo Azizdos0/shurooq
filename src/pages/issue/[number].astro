@@ -112,7 +112,14 @@ const RAIL_SECTIONS = new Set(['lost']);
                   <>
                     <p class="cl-eyebrow">الباب {m.ordinal} — {m.title}</p>
                     <h2 class="cl-headline">{leadPiece.title?.trim() || m.title}</h2>
-                    <p class="cl-excerpt">{deriveExcerpt(leadPiece.section, leadPiece.content, 280)}</p>
+                    {leadPiece.section === 'progress' ? (
+                      <figure class="cl-cut section-photo">
+                        <img src={EARTH_PHOTO_URL} alt="الأرض مصوَّرةً من الفضاء" />
+                      </figure>
+                    ) : (
+                      <Engraving name={leadPiece.section} variant="cover" class="cl-cut" />
+                    )}
+                    <p class="cl-excerpt">{deriveExcerpt(leadPiece.section, leadPiece.content, 240)}</p>
                     <button class="cl-more" type="button" data-goto={pageNoOf[leadPiece.section] - 1}>
                       تتمّةٌ في الصفحة {toAr(pageNoOf[leadPiece.section])} ←
                     </button>
@@ -527,6 +534,8 @@ const RAIL_SECTIONS = new Set(['lost']);
   .cover-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: var(--space-l); margin-top: var(--space-xl); align-items: start; }
   .cl-eyebrow { font-family: var(--font-display); color: var(--oxide); font-size: var(--step--1); }
   .cl-headline { font-size: var(--step-3); line-height: 1.15; margin-top: 0.3rem; }
+  .cl-cut { margin: var(--space-m) 0 0; }
+  .cl-cut.section-photo img { max-width: 100%; }
   .cl-excerpt { margin-top: var(--space-m); font-size: var(--step-1); line-height: 1.9; color: var(--ink); }
   .cl-more {
     display: inline-block; margin-top: var(--space-s);

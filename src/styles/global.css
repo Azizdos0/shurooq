@@ -255,10 +255,14 @@ h1, h2, h3 {
    column when the available width is narrow (e.g. the editor's preview pane). */
 .pub-group-stat, .pub-group-article {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
   gap: var(--space-m) var(--space-l);
   margin-top: var(--space-s);
 }
+/* short figures pack tighter; article cards need real reading width, so
+   fewer-per-row. min(100%, …) keeps a card from overflowing a narrow
+   container (e.g. the Lost Newspaper's lead column, or the editor preview). */
+.pub-group-stat { grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); }
+.pub-group-article { grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); }
 .pub-subhead { font-family: var(--font-display); font-size: var(--step-1); }
 .pub-article, .pub-stat {
   border: 1px solid var(--rule);
