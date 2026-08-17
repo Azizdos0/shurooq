@@ -2,10 +2,10 @@
 // Large "newspaper cut" illustrations — vintage engraving style, ink-only,
 // matching the small Ornament marks but scaled up into proper scenes.
 // These are honestly captioned as illustrative drawings, not artifacts.
-const { name, caption, class: className = '' } = Astro.props;
+const { name, caption, zone, class: className = '' } = Astro.props;
 const uid = name; // unique-enough per page since each section appears once
 ---
-<figure class={`engraving ${className}`}>
+<figure class={`engraving pub-field ${className}`} data-zone={zone}>
   <div class="engraving-frame">
     <svg viewBox="0 0 480 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label={caption}>
       <defs>

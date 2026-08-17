@@ -56,6 +56,13 @@ const leadPiece = readyPieces.find((p) => p.section === 'lost') || readyPieces[0
 const otherPieces = readyPieces.filter((p) => p !== leadPiece);
 const pageNoOf = Object.fromEntries(readyPieces.map((p, i) => [p.section, i + 2]));
 const totalPages = readyPieces.length + 1;
+
+// Only sections with genuine short sidebar-shaped fields (market notices,
+// classifieds) get the two-column lead+rail split. Others (including
+// "without", which only has a highlight pull-quote, not rail material)
+// stay a single lead column — a highlight box still renders full-width
+// there via the [data-zone="highlight"] rule, independent of the split.
+const RAIL_SECTIONS = new Set(['lost']);
 ---
 <Base title={title} description={`${title} — شروق`}>
   {readyPieces.length === 0 ? (
@@ -178,16 +185,17 @@ const totalPages = readyPieces.length + 1;
               </div>
               <p class="section-tagline">{m.tagline}</p>
 
-              {p.section === 'progress' ? (
-                <figure class="section-photo">
-                  <img src={EARTH_PHOTO_URL} alt="الأرض مصوَّرةً من الفضاء" />
-                  <figcaption>{EARTH_PHOTO_CAPTION}</figcaption>
-                </figure>
-              ) : (
-                <Engraving name={p.section} caption={ENGRAVING_CAPTIONS[p.section]} />
-              )}
-
-              <div class="section-flow" set:html={renderPieceBody(p.section, p.content)} />
+              <div class={`section-flow ${RAIL_SECTIONS.has(p.section) ? 'has-rail' : ''}`}>
+                {p.section === 'progress' ? (
+                  <figure class="section-photo pub-field" data-zone="lead">
+                    <img src={EARTH_PHOTO_URL} alt="الأرض مصوَّرةً من الفضاء" />
+                    <figcaption>{EARTH_PHOTO_CAPTION}</figcaption>
+                  </figure>
+                ) : (
+                  <Engraving name={p.section} caption={ENGRAVING_CAPTIONS[p.section]} zone="lead" />
+                )}
+                <div class="pub-fields" set:html={renderPieceBody(p.section, p.content)} />
+              </div>
             </article>
           );
         })}

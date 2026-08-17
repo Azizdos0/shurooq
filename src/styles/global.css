@@ -222,6 +222,11 @@ h1, h2, h3 {
 .pub-group { margin-top: var(--space-s); }
 .pub-group .pub-label { display: block; margin-bottom: 0.4rem; }
 
+/* Wrapper the renderer puts around every top-level field. Invisible by
+   default (plain block); the issue page assigns data-zone to a grid
+   column for sections with real sidebar-shaped content (see [number].astro). */
+.pub-field { min-width: 0; }
+
 .pub-notices { list-style: none; padding: 0; margin-top: 0.4rem; }
 .pub-notices li {
   padding: 0.35rem 0;
@@ -244,12 +249,20 @@ h1, h2, h3 {
   font-size: var(--step-1);
   line-height: 1.4;
 }
-.pub-article { margin-top: var(--space-s); }
-.pub-subhead { font-family: var(--font-display); font-size: var(--step-1); }
-.pub-stat {
+
+/* Stat/article groups render as a responsive card grid — denser and more
+   "newspaper page" than a single flowing stack. Naturally collapses to one
+   column when the available width is narrow (e.g. the editor's preview pane). */
+.pub-group-stat, .pub-group-article {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--space-m) var(--space-l);
   margin-top: var(--space-s);
-  padding-top: var(--space-s);
-  border-top: 1px solid var(--rule);
+}
+.pub-subhead { font-family: var(--font-display); font-size: var(--step-1); }
+.pub-article, .pub-stat {
+  border: 1px solid var(--rule);
+  padding: var(--space-s) var(--space-m);
 }
 .pub-num {
   font-family: var(--font-display);
@@ -260,37 +273,58 @@ h1, h2, h3 {
 }
 .pub-statlabel { font-family: var(--font-display); font-size: var(--step-1); }
 
-/* Newspaper column flow — only inside .section-flow (the issue page), so the
-   single-column editor preview is unaffected. Rendered .pub-* content is
-   injected via set:html and can't be scoped, so these rules live here. */
-.section-flow {
-  columns: 2 17rem;
-  column-gap: clamp(1.4rem, 4vw, 3rem);
-  column-rule: 1px solid var(--rule);
-}
+/* Newspaper page layout — only inside .section-flow (the issue page), so
+   the editor's simpler preview pane is unaffected. Rendered .pub-* content
+   is injected via set:html and can't be scoped, so these rules live here.
+
+   .section-flow is always a lead column that reads top to bottom. Sections
+   whose template tags fields zone:'rail'/'highlight' (short sidebar
+   notices, a pull-quote) additionally get .has-rail, which opens a second,
+   narrower column for that material — like a real page with a lead story
+   and boxed sidebar items, not just flowing text. */
 .section-flow .pub-prose p { text-align: justify; text-justify: inter-word; }
-/* the lead headline + dateline span the full width, like a real front page */
-.section-flow .pub-headline {
-  column-span: all;
-  text-align: center;
-  font-size: var(--step-3);
-  line-height: 1.15;
-  margin: 0.2rem 0 var(--space-m);
+.section-flow .pub-headline { text-align: center; font-size: var(--step-3); line-height: 1.15; margin: 0.2rem 0 var(--space-m); }
+.section-flow .pub-dateline { text-align: center; margin-bottom: var(--space-s); }
+.section-flow .pub-num { font-size: var(--step-2); display: block; margin-bottom: 0.1rem; }
+
+.section-flow .pub-fields { display: contents; }
+
+/* NOTE: .pub-fields uses display:contents so its children act as direct
+   grid items of .section-flow for LAYOUT purposes — but display:contents
+   does not change the DOM tree, so selector matching still sees
+   .section-flow > .pub-fields > [data-zone]. These rules use a descendant
+   combinator (space), not ">", precisely so they still match through that
+   wrapper regardless of layout mode. */
+.section-flow.has-rail {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: var(--space-m) var(--space-xl);
+  align-items: start;
 }
-.section-flow .pub-dateline { column-span: all; text-align: center; margin-bottom: var(--space-s); }
-/* keep headings attached to what follows; keep small blocks whole */
-.section-flow .pub-headline,
-.section-flow .pub-subhead,
-.section-flow .pub-label,
-.section-flow .pub-dateline { break-after: avoid; }
-.section-flow .pub-article,
-.section-flow .pub-stat { break-inside: avoid; }
-.section-flow .pub-group:first-child .pub-label { margin-top: 0; border-top: 0; }
-/* figures read as a small "by the numbers" box */
-.section-flow .pub-stat {
+.section-flow.has-rail [data-zone="lead"] { grid-column: 1; margin-top: 0; }
+.section-flow.has-rail [data-zone="rail"],
+.section-flow.has-rail [data-zone="highlight"] { grid-column: 2; margin-top: 0; }
+
+.section-flow.has-rail [data-zone="rail"] {
   border: 1px solid var(--rule);
   padding: var(--space-s) var(--space-m);
-  margin-top: var(--space-s);
 }
-.section-flow .pub-num { font-size: var(--step-2); display: block; margin-bottom: 0.1rem; }
-.section-flow .pub-linefield { margin-top: var(--space-m); padding-top: var(--space-s); border-top: 1px solid var(--rule); }
+.section-flow.has-rail [data-zone="rail"] .pub-label { margin-top: 0; border-top: 0; padding-top: 0; }
+
+/* the standout box — a pull-quote or single highlighted fact, inverted */
+.section-flow [data-zone="highlight"] {
+  background: var(--ink);
+  color: var(--paper);
+  padding: var(--space-m);
+  margin-top: var(--space-m);
+}
+.section-flow [data-zone="highlight"] .pub-label,
+.section-flow [data-zone="highlight"] .pub-dateline { color: var(--ochre); border-color: rgba(244,236,218,0.25); }
+.section-flow [data-zone="highlight"] .pub-prose p { text-align: start; }
+
+@media (max-width: 46rem) {
+  .section-flow.has-rail { grid-template-columns: 1fr; }
+  .section-flow.has-rail [data-zone="rail"],
+  .section-flow.has-rail [data-zone="lead"],
+  .section-flow.has-rail [data-zone="highlight"] { grid-column: 1; }
+}

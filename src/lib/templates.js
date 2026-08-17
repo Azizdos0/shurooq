@@ -41,14 +41,14 @@ export const templates = {
         ],
       },
       {
-        id: 'market', label: 'أخبار السوق', type: 'list', itemStyle: 'notice',
+        id: 'market', label: 'أخبار السوق', type: 'list', itemStyle: 'notice', zone: 'rail',
         item: [{ id: 'text', label: 'الخبر', type: 'line' }],
       },
       {
-        id: 'classifieds', label: 'إعلانات', type: 'list', itemStyle: 'notice',
+        id: 'classifieds', label: 'إعلانات', type: 'list', itemStyle: 'notice', zone: 'rail',
         item: [{ id: 'text', label: 'الإعلان', type: 'line' }],
       },
-      { id: 'weather', label: 'الطقس', type: 'line' },
+      { id: 'weather', label: 'الطقس', type: 'line', zone: 'highlight' },
     ],
   },
 
@@ -84,7 +84,7 @@ export const templates = {
         id: 'consequences', label: 'النتائج', type: 'list', itemStyle: 'ordered',
         item: [{ id: 'text', label: 'النتيجة', type: 'prose' }],
       },
-      { id: 'dispatch', label: 'خبرٌ من ذلك الزمن', type: 'prose' },
+      { id: 'dispatch', label: 'خبرٌ من ذلك الزمن', type: 'prose', zone: 'highlight' },
     ],
   },
 
@@ -150,6 +150,13 @@ export function deriveExcerpt(sectionId, content = {}, maxLen = 120) {
 
 // Render the structured BODY of a piece to an HTML string (values escaped).
 // The section header (ornament + name) is rendered by the page, not here.
+//
+// Each top-level field is wrapped in a data-zone div: 'lead' (default, the
+// main story), 'rail' (short sidebar items — market notices, classifieds),
+// or 'highlight' (a single standout fact/quote, e.g. weather or a dispatch
+// from an alternate timeline). Section pages use this to lay lead+sidebar
+// content out like a real newspaper page; sections with no rail/highlight
+// fields simply render as one lead column.
 export function renderPieceBody(sectionId, content = {}) {
   const t = templates[sectionId];
   if (!t) return '';
@@ -157,30 +164,34 @@ export function renderPieceBody(sectionId, content = {}) {
 
   for (const f of t.fields) {
     const val = content[f.id];
+    const zone = f.zone || 'lead';
+    let inner = '';
 
     if (f.type === 'line') {
       if (!val || !String(val).trim()) continue;
-      if (f.role === 'headline') out.push(`<h3 class="pub-headline">${esc(val)}</h3>`);
-      else if (f.role === 'dateline') out.push(`<p class="pub-dateline">${esc(val)}</p>`);
-      else out.push(`<p class="pub-linefield"><span class="pub-label">${esc(f.label)}</span> ${esc(val)}</p>`);
-      continue;
-    }
-
-    if (f.type === 'prose') {
+      if (f.role === 'headline') inner = `<h3 class="pub-headline">${esc(val)}</h3>`;
+      else if (f.role === 'dateline') inner = `<p class="pub-dateline">${esc(val)}</p>`;
+      else inner = `<p class="pub-linefield"><span class="pub-label">${esc(f.label)}</span> ${esc(val)}</p>`;
+    } else if (f.type === 'prose') {
       const html = proseHtml(val);
       if (!html) continue;
-      if (!f.hideLabel) out.push(`<p class="pub-label">${esc(f.label)}</p>`);
-      out.push(`<div class="pub-prose">${html}</div>`);
+      inner = (f.hideLabel ? '' : `<p class="pub-label">${esc(f.label)}</p>`) + `<div class="pub-prose">${html}</div>`;
+    } else if (f.type === 'list') {
+      const items = Array.isArray(val) ? val : [];
+      const rendered = renderList(f, items);
+      if (!rendered) continue;
+      inner = `<section class="pub-group pub-group-${esc(field_itemStyle(f))}"><p class="pub-label">${esc(f.label)}</p>${rendered}</section>`;
+    } else {
       continue;
     }
 
-    if (f.type === 'list') {
-      const items = Array.isArray(val) ? val : [];
-      const rendered = renderList(f, items);
-      if (rendered) out.push(`<section class="pub-group"><p class="pub-label">${esc(f.label)}</p>${rendered}</section>`);
-    }
+    out.push(`<div class="pub-field" data-zone="${zone}">${inner}</div>`);
   }
   return out.join('\n');
+}
+
+function field_itemStyle(f) {
+  return f.itemStyle || 'article';
 }
 
 function renderList(field, items) {
